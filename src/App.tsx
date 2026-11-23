@@ -466,6 +466,73 @@ export default function App() {
         </button>
       </div>
 
+      {/* Sidebar Unit & Tahun Selectors */}
+      {!collapsed ? (
+        <div className="px-3.5 py-3 border-b border-slate-200 dark:border-slate-800 space-y-2.5 bg-slate-50/60 dark:bg-slate-900/60">
+          <div>
+            <label
+              htmlFor="sidebar-unit-select"
+              className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1"
+            >
+              Unit
+            </label>
+            <select
+              id="sidebar-unit-select"
+              value={unit}
+              onChange={(e) => setUnit(e.target.value as UnitType)}
+              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer"
+            >
+              <option value="perencanaan">Perencanaan</option>
+              <option value="fasilitas">Fasilitas</option>
+            </select>
+          </div>
+
+          {unit === 'perencanaan' && (
+            <div>
+              <label
+                htmlFor="sidebar-tahun-select"
+                className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1"
+              >
+                Tahun data
+              </label>
+              <select
+                id="sidebar-tahun-select"
+                value={tahun}
+                onChange={(e) => setTahun(e.target.value as TahunType)}
+                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-semibold tabular-nums text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer"
+              >
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+                <option value="2027">2027</option>
+              </select>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="px-2 py-2.5 border-b border-slate-200 dark:border-slate-800 flex flex-col items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setUnit((u) => (u === 'perencanaan' ? 'fasilitas' : 'perencanaan'))}
+            title={`Unit: ${unit === 'perencanaan' ? 'Perencanaan' : 'Fasilitas'} (klik untuk ganti)`}
+            className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700"
+          >
+            {unit === 'perencanaan' ? 'PRC' : 'FAS'}
+          </button>
+          {unit === 'perencanaan' && (
+            <button
+              type="button"
+              onClick={() =>
+                setTahun((y) => (y === '2026' ? '2025' : y === '2025' ? '2027' : '2026'))
+              }
+              title={`Tahun data: ${tahun} (klik untuk ganti)`}
+              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-1 text-[10px] font-bold tabular-nums text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+            >
+              {tahun}
+            </button>
+          )}
+        </div>
+      )}
+
       <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-1">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -683,99 +750,51 @@ export default function App() {
         </header>
 
         <main
-          className="flex-1 p-4 sm:p-6 space-y-4 max-w-[1600px] w-full mx-auto"
+          className="flex-1 p-3 sm:p-4 space-y-3 max-w-[1800px] w-full mx-auto"
           style={presMode ? { zoom: `${presZoom}%` } : undefined}
         >
           {!presMode && (
-            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Unit:</span>
-                  <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-0.5 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => setUnit('perencanaan')}
-                      className={`px-2.5 py-1 rounded-md font-semibold transition ${
-                        unit === 'perencanaan'
-                          ? 'bg-blue-600 text-white shadow-xs'
-                          : 'text-slate-600 dark:text-slate-300'
-                      }`}
-                    >
-                      Perencanaan
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setUnit('fasilitas')}
-                      className={`px-2.5 py-1 rounded-md font-semibold transition ${
-                        unit === 'fasilitas'
-                          ? 'bg-blue-600 text-white shadow-xs'
-                          : 'text-slate-600 dark:text-slate-300'
-                      }`}
-                    >
-                      Fasilitas
-                    </button>
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 flex flex-wrap items-center justify-between gap-2.5">
+              {activeTab !== 'input' ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                    Filter triwulan:
+                  </span>
+                  <div className="inline-flex flex-wrap rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-0.5 text-xs">
+                    {(
+                      [
+                        { id: 'all', lbl: 'Tahun ini' },
+                        { id: '1', lbl: 'TW 1' },
+                        { id: '2', lbl: 'TW 2' },
+                        { id: '3', lbl: 'TW 3' },
+                        { id: '4', lbl: 'TW 4' },
+                      ] as Array<{ id: TriwulanType; lbl: string }>
+                    ).map((q) => (
+                      <button
+                        key={q.id}
+                        type="button"
+                        onClick={() => setTw(q.id)}
+                        className={`px-2.5 py-1 rounded-md font-medium whitespace-nowrap transition ${
+                          tw === q.id
+                            ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                            : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        {q.lbl}
+                      </button>
+                    ))}
                   </div>
                 </div>
+              ) : (
+                <div />
+              )}
 
-                {unit === 'perencanaan' && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Tahun:</span>
-                    <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-0.5 text-xs">
-                      {(['2025', '2026', '2027'] as TahunType[]).map((y) => (
-                        <button
-                          key={y}
-                          type="button"
-                          onClick={() => setTahun(y)}
-                          className={`px-2.5 py-1 rounded-md font-semibold tabular-nums transition ${
-                            tahun === y
-                              ? 'bg-blue-600 text-white shadow-xs'
-                              : 'text-slate-600 dark:text-slate-300'
-                          }`}
-                        >
-                          {y}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {activeTab !== 'input' && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Filter triwulan:</span>
-                    <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-0.5 text-xs">
-                      {(
-                        [
-                          { id: 'all', lbl: 'Tahun ini' },
-                          { id: '1', lbl: 'TW 1' },
-                          { id: '2', lbl: 'TW 2' },
-                          { id: '3', lbl: 'TW 3' },
-                          { id: '4', lbl: 'TW 4' },
-                        ] as Array<{ id: TriwulanType; lbl: string }>
-                      ).map((q) => (
-                        <button
-                          key={q.id}
-                          type="button"
-                          onClick={() => setTw(q.id)}
-                          className={`px-2.5 py-1 rounded-md font-medium transition ${
-                            tw === q.id
-                              ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                              : 'text-slate-600 dark:text-slate-300'
-                          }`}
-                        >
-                          {q.lbl}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 ml-auto">
                 {role === 'admin' && (
                   <button
                     type="button"
                     onClick={() => setSettingsOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 whitespace-nowrap shrink-0"
                   >
                     <Settings2 className="w-3.5 h-3.5" />
                     <span className="hidden sm:inline">Pengaturan</span>
@@ -787,7 +806,7 @@ export default function App() {
                   onClick={() =>
                     unit === 'fasilitas' ? loadFasilitas(true) : loadPerencanaan(tahun, true)
                   }
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 disabled:opacity-50 whitespace-nowrap shrink-0"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${loadingMain ? 'animate-spin' : ''}`} />
                   <span>Muat ulang data</span>

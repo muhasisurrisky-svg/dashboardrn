@@ -103,10 +103,10 @@ export const NusantaraView: React.FC<NusantaraViewProps> = ({ nusantara, tahun, 
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {kurva && kurva.length > 0 && (
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-          <div className="mb-3">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+          <div className="mb-2 shrink-0">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               Kurva S Nusantara Explorer
             </h3>
@@ -122,13 +122,13 @@ export const NusantaraView: React.FC<NusantaraViewProps> = ({ nusantara, tahun, 
             formatValue={(v) => fmtP(v, 2)}
             formatSelisih={(v) => `${v >= 0 ? '+' : ''}${fmtP(v, 2)}`}
             isDark={isDark}
-            heightClass="h-64"
+            heightClass="h-64 sm:h-72"
             isPercentScale
           />
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <KpiCard
           title="Progres aktual"
           value={kpi.aktual}

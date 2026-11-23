@@ -178,8 +178,8 @@ export const SukuCadangView: React.FC<SukuCadangViewProps> = ({ sukuCadang, tahu
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <KpiCard
           title="Total nilai suku cadang"
           value={fmtM(filteredTotal)}
@@ -245,9 +245,9 @@ export const SukuCadangView: React.FC<SukuCadangViewProps> = ({ sukuCadang, tahu
       )}
 
       {/* Top 10 Material Horizontal Bar + Vendor Table */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-          <div className="mb-3">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <div className="lg:col-span-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+          <div className="mb-2 shrink-0">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               10 material dengan nilai terbesar
             </h3>
@@ -258,7 +258,7 @@ export const SukuCadangView: React.FC<SukuCadangViewProps> = ({ sukuCadang, tahu
 
           <ChartCanvas
             isDark={isDark}
-            heightClass="h-64"
+            heightClass="flex-1 min-h-[280px]"
             deps={[topMaterials, fMaterial]}
             buildConfig={(_, dark) => ({
               type: 'bar',
@@ -281,6 +281,7 @@ export const SukuCadangView: React.FC<SukuCadangViewProps> = ({ sukuCadang, tahu
                 indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: { padding: { top: 2, right: 6, bottom: 0, left: 0 } },
                 onClick: (_evt: unknown, els: Array<{ index: number }>) => {
                   if (els.length > 0) {
                     const mat = topMaterials[els[0].index]?.label;
@@ -304,12 +305,13 @@ export const SukuCadangView: React.FC<SukuCadangViewProps> = ({ sukuCadang, tahu
                     ticks: {
                       color: dark ? '#94A3B8' : '#64748B',
                       font: { size: 10 },
+                      padding: 4,
                       callback: (v: string | number) => fmtM(Number(v)),
                     },
                   },
                   y: {
                     grid: { display: false },
-                    ticks: { color: dark ? '#CBD5E1' : '#334155', font: { size: 10 } },
+                    ticks: { color: dark ? '#CBD5E1' : '#334155', font: { size: 10 }, padding: 4 },
                   },
                 },
               },
@@ -318,7 +320,7 @@ export const SukuCadangView: React.FC<SukuCadangViewProps> = ({ sukuCadang, tahu
         </div>
 
         <div className="lg:col-span-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden flex flex-col">
-          <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+          <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 shrink-0">
             <div>
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Vendor suku cadang</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">Klik baris vendor untuk menyaring data</p>
@@ -331,7 +333,7 @@ export const SukuCadangView: React.FC<SukuCadangViewProps> = ({ sukuCadang, tahu
               className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1 text-xs w-44 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
             />
           </div>
-          <div className="overflow-x-auto max-h-64">
+          <div className="overflow-x-auto max-h-72 flex-1">
             <table className="w-full text-left border-collapse text-xs">
               <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider text-slate-500">
                 <tr>

@@ -5,7 +5,7 @@ interface DanantaraLogoProps {
 }
 
 export const DanantaraLogo: React.FC<DanantaraLogoProps> = ({ compact }) => {
-  const heightCls = compact ? 'h-7' : 'h-8 sm:h-9';
+  const heightCls = compact ? 'h-7 sm:h-8' : 'h-9 sm:h-10';
   return (
     <div className="flex items-center shrink-0">
       <img
@@ -13,39 +13,11 @@ export const DanantaraLogo: React.FC<DanantaraLogoProps> = ({ compact }) => {
         alt="Danantara Indonesia"
         className={`${heightCls} w-auto object-contain dark:hidden`}
       />
-      {/* Crisp vector version for dark mode without white background plate */}
-      <svg
-        viewBox="0 0 210 56"
-        className={`hidden dark:block ${heightCls} w-auto`}
-        aria-label="Danantara Indonesia"
-      >
-        <g transform="translate(4,6)">
-          <path d="M2 8C14 0 28 2 38 9C27 7 15 9 4 17Z" fill="#EF4444" />
-          <path d="M5 20C16 13 29 14 38 20C28 19 16 21 7 29Z" fill="#F8FAFC" />
-          <path d="M10 31C19 25 30 25 38 30C29 30 20 32 13 38Z" fill="#EF4444" />
-        </g>
-        <text
-          x="52"
-          y="25"
-          fill="#F8FAFC"
-          fontSize="16"
-          fontWeight="700"
-          fontFamily="Plus Jakarta Sans, sans-serif"
-          letterSpacing="-0.02em"
-        >
-          Danantara
-        </text>
-        <text
-          x="52"
-          y="42"
-          fill="#CBD5E1"
-          fontSize="13.5"
-          fontWeight="600"
-          fontFamily="Plus Jakarta Sans, sans-serif"
-        >
-          Indonesia
-        </text>
-      </svg>
+      <img
+        src="/logos/dn-dk.png"
+        alt="Danantara Indonesia"
+        className={`hidden dark:block ${heightCls} w-auto object-contain`}
+      />
     </div>
   );
 };
@@ -55,8 +27,8 @@ interface KaiRightLogosProps {
 }
 
 export const KaiRightLogos: React.FC<KaiRightLogosProps> = ({ compact }) => {
-  const smCls = compact ? 'h-6' : 'h-7 sm:h-8';
-  const kaiCls = compact ? 'h-5' : 'h-6 sm:h-7';
+  const smCls = compact ? 'h-6 sm:h-7' : 'h-7 sm:h-8';
+  const kaiCls = compact ? 'h-5 sm:h-6' : 'h-6 sm:h-7';
   return (
     <div className="flex items-center gap-2.5 shrink-0">
       <img

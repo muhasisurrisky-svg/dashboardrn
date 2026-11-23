@@ -145,13 +145,13 @@ export const FasilitasRingkasanView: React.FC<FasilitasRingkasanProps> = ({
   const aparAmanPct = apar && apar.total > 0 ? (apar.perStatus.Aman / apar.total) * 100 : 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <p className="text-xs text-slate-500 dark:text-slate-400">
         Ringkasan kinerja Unit Fasilitas (PROLIS, Kelayakan Kelas A, dan APAR){qRange ? ` · ${twLabelText(tw)}` : ''}
       </p>
 
       {/* 4 KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <KpiCard
           title="Realisasi PROLIS"
           value={prolis ? fmtP(prolisSummary.pctReal) : '—'}
@@ -238,49 +238,55 @@ export const FasilitasRingkasanView: React.FC<FasilitasRingkasanProps> = ({
       </div>
 
       {/* Middle Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-          <div className="mb-3">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <div className="lg:col-span-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+          <div className="mb-2 shrink-0">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Kondisi mesin PROLIS</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Status pengecekan terakhir</p>
           </div>
-          <DonutPanel
-            centerValue={fmtInt(prolisSummary.totalMesin)}
-            centerLabel="mesin"
-            onSelect={() => onNavigate('fas_prolis')}
-            segments={[
-              { label: 'Baik', value: prolisSummary.baik, color: '#10B981' },
-              { label: 'Rusak', value: prolisSummary.rusak, color: '#EF4444' },
-              { label: 'Usulan Afkir', value: prolisSummary.afkir, color: '#F59E0B' },
-              { label: 'Belum ada data', value: prolisSummary.kosong, color: '#94A3B8' },
-            ]}
-          />
+          <div className="flex-1 flex flex-col">
+            <DonutPanel
+              size={172}
+              centerValue={fmtInt(prolisSummary.totalMesin)}
+              centerLabel="mesin"
+              onSelect={() => onNavigate('fas_prolis')}
+              segments={[
+                { label: 'Baik', value: prolisSummary.baik, color: '#10B981' },
+                { label: 'Rusak', value: prolisSummary.rusak, color: '#EF4444' },
+                { label: 'Usulan Afkir', value: prolisSummary.afkir, color: '#F59E0B' },
+                { label: 'Belum ada data', value: prolisSummary.kosong, color: '#94A3B8' },
+              ]}
+            />
+          </div>
         </div>
 
-        <div className="lg:col-span-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-          <div className="mb-3">
+        <div className="lg:col-span-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+          <div className="mb-2 shrink-0">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Status APAR</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Kepatuhan masa berlaku APAR</p>
           </div>
           {apar ? (
-            <DonutPanel
-              centerValue={fmtInt(apar.total)}
-              centerLabel="APAR"
-              onSelect={() => onNavigate('apar')}
-              segments={[
-                { label: 'Aman', value: apar.perStatus.Aman, color: '#10B981' },
-                { label: 'Segera kadaluarsa', value: apar.perStatus['Segera kadaluarsa'], color: '#F59E0B' },
-                { label: 'Kadaluarsa', value: apar.perStatus.Kadaluarsa, color: '#EF4444' },
-                { label: 'Tidak ada data', value: apar.perStatus['Tidak ada data'], color: '#94A3B8' },
-              ]}
-            />
+            <div className="flex-1 flex flex-col">
+              <DonutPanel
+                size={172}
+                centerValue={fmtInt(apar.total)}
+                centerLabel="APAR"
+                onSelect={() => onNavigate('apar')}
+                segments={[
+                  { label: 'Aman', value: apar.perStatus.Aman, color: '#10B981' },
+                  { label: 'Segera kadaluarsa', value: apar.perStatus['Segera kadaluarsa'], color: '#F59E0B' },
+                  { label: 'Kadaluarsa', value: apar.perStatus.Kadaluarsa, color: '#EF4444' },
+                  { label: 'Tidak ada data', value: apar.perStatus['Tidak ada data'], color: '#94A3B8' },
+                ]}
+              />
+            </div>
           ) : (
-            <p className="text-xs text-slate-400 py-10 text-center">Data APAR tidak tersedia.</p>
+            <p className="text-xs text-slate-400 py-10 text-center my-auto">Data APAR tidak tersedia.</p>
           )}
         </div>
 
-        <div className="lg:col-span-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-          <div className="mb-3">
+        <div className="lg:col-span-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+          <div className="mb-2">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Perlu perhatian</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Tindak lanjut cepat Unit Fasilitas</p>
           </div>
@@ -336,9 +342,9 @@ export const FasilitasRingkasanView: React.FC<FasilitasRingkasanProps> = ({
       </div>
 
       {/* Bottom Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-          <div className="mb-3">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <div className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+          <div className="mb-2 shrink-0">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               Program vs realisasi PROLIS per bulan
             </h3>
@@ -348,7 +354,7 @@ export const FasilitasRingkasanView: React.FC<FasilitasRingkasanProps> = ({
           </div>
           <ChartCanvas
             isDark={isDark}
-            heightClass="h-56"
+            heightClass="flex-1 min-h-[260px]"
             deps={[prolisSummary.perBulanProg, prolisSummary.perBulanReal, twMask]}
             buildConfig={(_, dark) => ({
               type: 'bar',
@@ -376,15 +382,25 @@ export const FasilitasRingkasanView: React.FC<FasilitasRingkasanProps> = ({
               options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: { padding: { top: 4, right: 4, bottom: 0, left: 0 } },
                 plugins: {
-                  legend: { position: 'bottom', labels: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 } } },
+                  legend: {
+                    position: 'bottom',
+                    labels: {
+                      color: dark ? '#94A3B8' : '#64748B',
+                      font: { size: 11 },
+                      padding: 8,
+                      boxWidth: 10,
+                      boxHeight: 10,
+                    },
+                  },
                 },
                 scales: {
-                  x: { grid: { display: false }, ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 } } },
+                  x: { grid: { display: false }, ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 }, padding: 4 } },
                   y: {
                     beginAtZero: true,
                     grid: { color: dark ? 'rgba(148,163,184,0.12)' : 'rgba(15,23,42,0.06)' },
-                    ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 } },
+                    ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 }, padding: 4 },
                   },
                 },
               },
@@ -392,8 +408,8 @@ export const FasilitasRingkasanView: React.FC<FasilitasRingkasanProps> = ({
           />
         </div>
 
-        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-          <div className="mb-3">
+        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+          <div className="mb-2 shrink-0">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               Kelayakan Kelas A per jenis fasilitas
             </h3>
@@ -403,7 +419,7 @@ export const FasilitasRingkasanView: React.FC<FasilitasRingkasanProps> = ({
           </div>
           <ChartCanvas
             isDark={isDark}
-            heightClass="h-56"
+            heightClass="flex-1 min-h-[260px]"
             deps={[bysguSummary.jenisList]}
             buildConfig={(_, dark) => ({
               type: 'bar',
@@ -421,19 +437,29 @@ export const FasilitasRingkasanView: React.FC<FasilitasRingkasanProps> = ({
                 indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: { padding: { top: 4, right: 6, bottom: 0, left: 0 } },
                 plugins: {
-                  legend: { position: 'bottom', labels: { color: dark ? '#94A3B8' : '#64748B', font: { size: 10 } } },
+                  legend: {
+                    position: 'bottom',
+                    labels: {
+                      color: dark ? '#94A3B8' : '#64748B',
+                      font: { size: 10 },
+                      padding: 8,
+                      boxWidth: 10,
+                      boxHeight: 10,
+                    },
+                  },
                 },
                 scales: {
                   x: {
                     stacked: true,
                     grid: { color: dark ? 'rgba(148,163,184,0.12)' : 'rgba(15,23,42,0.06)' },
-                    ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 10 } },
+                    ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 10 }, padding: 4 },
                   },
                   y: {
                     stacked: true,
                     grid: { display: false },
-                    ticks: { color: dark ? '#CBD5E1' : '#334155', font: { size: 10 } },
+                    ticks: { color: dark ? '#CBD5E1' : '#334155', font: { size: 10 }, padding: 4 },
                   },
                 },
               },
@@ -609,8 +635,8 @@ export const FasilitasProlisView: React.FC<FasilitasProlisProps> = ({ fasilitas,
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <KpiCard title="Jumlah mesin" value={fmtInt(filtered.length)} subline={`Tahun ${fTahun === '__ALL__' ? 'Semua' : fTahun}`} accentColor="blue" />
         <KpiCard
           title="Realisasi pemeliharaan"
@@ -626,14 +652,14 @@ export const FasilitasProlisView: React.FC<FasilitasProlisProps> = ({ fasilitas,
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <div className="lg:col-span-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2 shrink-0">
             Program vs realisasi per bulan
           </h3>
           <ChartCanvas
             isDark={isDark}
-            heightClass="h-56"
+            heightClass="flex-1 min-h-[260px]"
             deps={[stats.perBulanProg, stats.perBulanReal]}
             buildConfig={(_, dark) => ({
               type: 'bar',
@@ -647,23 +673,35 @@ export const FasilitasProlisView: React.FC<FasilitasProlisProps> = ({ fasilitas,
               options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom', labels: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 } } } },
+                layout: { padding: { top: 4, right: 4, bottom: 0, left: 0 } },
+                plugins: {
+                  legend: {
+                    position: 'bottom',
+                    labels: {
+                      color: dark ? '#94A3B8' : '#64748B',
+                      font: { size: 11 },
+                      padding: 8,
+                      boxWidth: 10,
+                      boxHeight: 10,
+                    },
+                  },
+                },
                 scales: {
-                  x: { grid: { display: false }, ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 } } },
-                  y: { beginAtZero: true, grid: { color: dark ? 'rgba(148,163,184,0.12)' : 'rgba(15,23,42,0.06)' }, ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 } } },
+                  x: { grid: { display: false }, ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 }, padding: 4 } },
+                  y: { beginAtZero: true, grid: { color: dark ? 'rgba(148,163,184,0.12)' : 'rgba(15,23,42,0.06)' }, ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 }, padding: 4 } },
                 },
               },
             })}
           />
         </div>
 
-        <div className="lg:col-span-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">
+        <div className="lg:col-span-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2 shrink-0">
             Kondisi per jenis mesin (Top 12)
           </h3>
           <ChartCanvas
             isDark={isDark}
-            heightClass="h-56"
+            heightClass="flex-1 min-h-[260px]"
             deps={[stats.topJenis]}
             buildConfig={(_, dark) => ({
               type: 'bar',
@@ -680,10 +718,22 @@ export const FasilitasProlisView: React.FC<FasilitasProlisProps> = ({ fasilitas,
                 indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom', labels: { color: dark ? '#94A3B8' : '#64748B', font: { size: 10 } } } },
+                layout: { padding: { top: 4, right: 6, bottom: 0, left: 0 } },
+                plugins: {
+                  legend: {
+                    position: 'bottom',
+                    labels: {
+                      color: dark ? '#94A3B8' : '#64748B',
+                      font: { size: 10 },
+                      padding: 8,
+                      boxWidth: 10,
+                      boxHeight: 10,
+                    },
+                  },
+                },
                 scales: {
-                  x: { stacked: true, grid: { color: dark ? 'rgba(148,163,184,0.12)' : 'rgba(15,23,42,0.06)' }, ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 10 } } },
-                  y: { stacked: true, grid: { display: false }, ticks: { color: dark ? '#CBD5E1' : '#334155', font: { size: 10 } } },
+                  x: { stacked: true, grid: { color: dark ? 'rgba(148,163,184,0.12)' : 'rgba(15,23,42,0.06)' }, ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 10 }, padding: 4 } },
+                  y: { stacked: true, grid: { display: false }, ticks: { color: dark ? '#CBD5E1' : '#334155', font: { size: 10 }, padding: 4 } },
                 },
               },
             })}
@@ -865,8 +915,8 @@ export const FasilitasKelayakanView: React.FC<FasilitasKelayakanProps> = ({ fasi
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <KpiCard title="Persentase kelayakan" value={fmtP(stats.pct)} subline={`${fmtInt(stats.ada)} dari ${fmtInt(stats.wajibCount)} item wajib`} pctForStatus={stats.pct} showThresholdBar />
         <KpiCard title="Memenuhi syarat" value={fmtInt(stats.ada)} subline="Item wajib berstatus Ada" accentColor="emerald" />
         <KpiCard title="Belum tersedia" value={fmtInt(stats.belum)} subline="Wajib Kelas A perlu pemenuhan" accentColor="rose" />
@@ -900,13 +950,13 @@ export const FasilitasKelayakanView: React.FC<FasilitasKelayakanProps> = ({ fasi
         </div>
       )}
 
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2 shrink-0">
           Kelayakan per jenis fasilitas
         </h3>
         <ChartCanvas
           isDark={isDark}
-          heightClass="h-60"
+          heightClass="h-64 sm:h-72"
           deps={[stats.perJenis]}
           buildConfig={(_, dark) => ({
             type: 'bar',
@@ -921,10 +971,22 @@ export const FasilitasKelayakanView: React.FC<FasilitasKelayakanProps> = ({ fasi
             options: {
               responsive: true,
               maintainAspectRatio: false,
-              plugins: { legend: { position: 'bottom', labels: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 } } } },
+              layout: { padding: { top: 4, right: 4, bottom: 0, left: 0 } },
+              plugins: {
+                legend: {
+                  position: 'bottom',
+                  labels: {
+                    color: dark ? '#94A3B8' : '#64748B',
+                    font: { size: 11 },
+                    padding: 8,
+                    boxWidth: 10,
+                    boxHeight: 10,
+                  },
+                },
+              },
               scales: {
-                x: { stacked: true, grid: { display: false }, ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 10 } } },
-                y: { stacked: true, beginAtZero: true, grid: { color: dark ? 'rgba(148,163,184,0.12)' : 'rgba(15,23,42,0.06)' }, ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 } } },
+                x: { stacked: true, grid: { display: false }, ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 10 }, padding: 4 } },
+                y: { stacked: true, beginAtZero: true, grid: { color: dark ? 'rgba(148,163,184,0.12)' : 'rgba(15,23,42,0.06)' }, ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 }, padding: 4 } },
               },
             },
           })}

@@ -141,7 +141,7 @@ export const AparView: React.FC<AparViewProps> = ({ apar }) => {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {(apar.tanpaLokasi > 0 || belumCek > 0) && (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/30 px-4 py-2.5 text-xs text-amber-800 dark:text-amber-200">
           <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
@@ -243,30 +243,33 @@ export const AparView: React.FC<AparViewProps> = ({ apar }) => {
       )}
 
       {/* Middle Row: Donut + Titik Penempatan */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-          <div className="mb-3">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+          <div className="mb-2 shrink-0">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Status kadaluarsa APAR</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Klik status untuk memfilter daftar APAR
             </p>
           </div>
-          <DonutPanel
-            centerValue={fmtInt(apar.total)}
-            centerLabel="unit APAR"
-            activeLabel={fStatus}
-            onSelect={(lbl) => setFStatus((c) => (c === lbl ? null : lbl))}
-            segments={[
-              { label: 'Aman', value: apar.perStatus.Aman, color: '#10B981' },
-              { label: 'Segera kadaluarsa', value: apar.perStatus['Segera kadaluarsa'], color: '#F59E0B' },
-              { label: 'Kadaluarsa', value: apar.perStatus.Kadaluarsa, color: '#EF4444' },
-              { label: 'Tidak ada data', value: apar.perStatus['Tidak ada data'], color: '#94A3B8' },
-            ]}
-          />
+          <div className="flex-1 flex flex-col">
+            <DonutPanel
+              size={180}
+              centerValue={fmtInt(apar.total)}
+              centerLabel="unit APAR"
+              activeLabel={fStatus}
+              onSelect={(lbl) => setFStatus((c) => (c === lbl ? null : lbl))}
+              segments={[
+                { label: 'Aman', value: apar.perStatus.Aman, color: '#10B981' },
+                { label: 'Segera kadaluarsa', value: apar.perStatus['Segera kadaluarsa'], color: '#F59E0B' },
+                { label: 'Kadaluarsa', value: apar.perStatus.Kadaluarsa, color: '#EF4444' },
+                { label: 'Tidak ada data', value: apar.perStatus['Tidak ada data'], color: '#94A3B8' },
+              ]}
+            />
+          </div>
         </div>
 
         <div className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden flex flex-col">
-          <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+          <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 shrink-0">
             <div>
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Titik penempatan</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">Klik lokasi untuk memfilter daftar APAR</p>
@@ -280,7 +283,7 @@ export const AparView: React.FC<AparViewProps> = ({ apar }) => {
             />
           </div>
 
-          <div className="overflow-x-auto max-h-60">
+          <div className="overflow-x-auto max-h-72 flex-1">
             <table className="w-full text-left border-collapse text-xs">
               <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider text-slate-500">
                 <tr>

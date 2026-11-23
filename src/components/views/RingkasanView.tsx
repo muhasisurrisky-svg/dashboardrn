@@ -117,7 +117,9 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
       pct,
       hero: fmtP(pct),
       subline: `${fmtM(tot.consumed)} dari RKAP ${fmtM(tot.rkap)}`,
-      footerText: `Sisa ${fmtM(tot.available)}`,
+      footerText: qRange
+        ? `Sisa ${fmtM(tot.available)} · kumulatif tahunan`
+        : `Sisa ${fmtM(tot.available)}`,
       footerOk: tot.available >= 0 && pct >= 80,
       spark,
     };
@@ -152,9 +154,10 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
   const progMetrics = useMemo(() => {
     const pr = data.program;
     if (!pr) return null;
+    const baseRingkas = pr.ringkas.filter((r) => !/^(grand\s*total|sub\s*total|total|jumlah)\s*:?$/i.test(r.program.trim()));
 
     if (!qRange) {
-      const sum = pr.ringkas.reduce(
+      const sum = baseRingkas.reduce(
         (acc, r) => {
           acc.total += r.total;
           acc.realisasi += r.realisasi;
@@ -167,11 +170,11 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
         { total: 0, realisasi: 0, tsgo: 0, belumMasuk: 0, konservasi: 0, lainnya: 0 }
       );
       const pct = sum.total > 0 ? (sum.realisasi / sum.total) * 100 : 0;
-      return { ringkas: pr.ringkas, sum, pct };
+      return { ringkas: baseRingkas, sum, pct };
     }
 
     // Quarter-filtered from detail rows
-    const ringkas = pr.ringkas.map((base) => {
+    const ringkas = baseRingkas.map((base) => {
       const det = (pr.detail[base.program] || []).filter((d) => d.mr >= qRange[0] && d.mr <= qRange[1]);
       if (!det.length) {
         return { ...base, total: 0, realisasi: 0, tsgo: 0, belumMasuk: 0, konservasi: 0, lainnya: 0, pct: 0 };
@@ -220,8 +223,24 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
 
   /* ---------------- S-Curve Data (Unit or Rupiah) ---------------- */
   const kurvaUnit = useMemo(() => {
-    const b = data.program?.bulan?.__SEMUA__;
-    if (!b) return null;
+    const bulanMap = data.program?.bulan;
+    if (!bulanMap) return null;
+    let b = bulanMap.__SEMUA__;
+    if (!b) {
+      const keys = Object.keys(bulanMap).filter((k) => k !== '__SEMUA__');
+      if (!keys.length) return null;
+      const sumRen = new Array(12).fill(0);
+      const sumReal = new Array(12).fill(0);
+      keys.forEach((k) => {
+        const s = bulanMap[k];
+        if (!s) return;
+        for (let i = 0; i < 12; i++) {
+          sumRen[i] += s.rencana[i] || 0;
+          sumReal[i] += s.realisasi[i] || 0;
+        }
+      });
+      b = { rencana: sumRen, realisasi: sumReal };
+    }
     const labels: string[] = [];
     const renCum: Array<number | null> = [];
     const realCum: Array<number | null> = [];
@@ -232,14 +251,27 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
       if ((b.realisasi[i] || 0) > 0) lastRealIdx = i;
     }
     for (let i = 0; i < 12; i++) {
-      if (qRange && (i + 1 < qRange[0] || i + 1 > qRange[1])) continue;
+      if (qRange && i + 1 > qRange[1]) continue;
       labels.push(BLN_LABEL[i]);
       cRen += b.rencana[i] || 0;
       cReal += b.realisasi[i] || 0;
       renCum.push(cRen);
       realCum.push(i <= lastRealIdx ? cReal : null);
     }
-    return { labels, renCum, realCum };
+    if (cRen === 0 && lastRealIdx < 0) return null;
+
+    let lastLabel = '';
+    let lastSelisih: number | null = null;
+    for (let idx = realCum.length - 1; idx >= 0; idx--) {
+      const rv = realCum[idx];
+      if (rv !== null && rv !== undefined) {
+        lastLabel = labels[idx];
+        lastSelisih = rv - Number(renCum[idx] ?? 0);
+        break;
+      }
+    }
+
+    return { labels, renCum, realCum, lastLabel, lastSelisih };
   }, [data.program, qRange]);
 
   const kurvaRupiah = useMemo(() => {
@@ -248,7 +280,7 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
     const pts = qRange
       ? ka.filter((p) => {
           const m = periodToMonth(p.periode);
-          return m === 0 || (m >= qRange[0] && m <= qRange[1]);
+          return m === 0 || m <= qRange[1];
         })
       : ka;
     if (!pts.length) return null;
@@ -304,14 +336,16 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
 
   const yoyProgDelta = useMemo(() => {
     if (!yoyOn || !prevData?.program || !progMetrics) return null;
-    const prevSum = prevData.program.ringkas.reduce(
-      (acc, r) => {
-        acc.t += r.total;
-        acc.r += r.realisasi;
-        return acc;
-      },
-      { t: 0, r: 0 }
-    );
+    const prevSum = prevData.program.ringkas
+      .filter((r) => !/^(grand\s*total|sub\s*total|total|jumlah)\s*:?$/i.test(r.program.trim()))
+      .reduce(
+        (acc, r) => {
+          acc.t += r.total;
+          acc.r += r.realisasi;
+          return acc;
+        },
+        { t: 0, r: 0 }
+      );
     const prevPct = prevSum.t > 0 ? (prevSum.r / prevSum.t) * 100 : 0;
     return progMetrics.pct - prevPct;
   }, [yoyOn, prevData, progMetrics]);
@@ -386,7 +420,7 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
   }, [progMetrics]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* YoY Toggle Bar */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -414,7 +448,7 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
       </div>
 
       {/* 4 KPI Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <KpiCard
           title="Anggaran terserap"
           value={angMetrics ? angMetrics.hero : '—'}
@@ -480,7 +514,7 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
           value={progMetrics ? fmtP(progMetrics.pct) : '—'}
           subline={
             progMetrics
-              ? `${fmtInt(progMetrics.sum.realisasi)} dari ${fmtInt(progMetrics.sum.total)} unit`
+              ? `${fmtInt(progMetrics.sum.realisasi)} dari ${fmtInt(progMetrics.sum.total)} unit${qRange ? ` (rencana TW ${tw})` : ''}`
               : 'Data program belum tersedia'
           }
           pctForStatus={progMetrics?.pct}
@@ -547,7 +581,7 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
             footer={
               data.nusantara && (
                 <span className="text-emerald-600 dark:text-emerald-400">
-                  Selesai 100%: {data.nusantara.kpi.selesai} kereta
+                  Selesai 100%: {data.nusantara.kpi.selesai} kereta{qRange ? ' · progres kumulatif' : ''}
                 </span>
               )
             }
@@ -556,10 +590,10 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
       </div>
 
       {/* Middle 3-column Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
         {/* Status unit per program */}
-        <div className="lg:col-span-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 flex flex-col">
-          <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="lg:col-span-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+          <div className="flex items-start justify-between gap-2 mb-2 shrink-0">
             <div>
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Status unit per program</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -568,13 +602,21 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
             </div>
           </div>
 
-          <div className="flex justify-between text-[10px] font-medium text-slate-400 dark:text-slate-500 pl-16 pr-12 mb-1.5">
-            <span>0%</span>
-            <span className="ml-auto mr-6">80%</span>
-            <span>95%</span>
+          <div className="flex items-center gap-3 px-2 -mx-2 mb-1 text-[10px] font-medium text-slate-400 dark:text-slate-500 shrink-0">
+            <div className="w-14 shrink-0" />
+            <div className="flex-1 min-w-0 relative h-3.5">
+              <span className="absolute left-0">0%</span>
+              <span className="absolute -translate-x-1/2" style={{ left: '80%' }}>
+                80%
+              </span>
+              <span className="absolute -translate-x-1/2" style={{ left: '95%' }}>
+                95%
+              </span>
+            </div>
+            <div className="w-12 shrink-0" />
           </div>
 
-          <div className="space-y-3 flex-1">
+          <div className="flex-1 flex flex-col justify-between gap-1.5">
             {orderedRingkas.map((r) => {
               const t = statusTier(r.pct);
               const w = Math.max(0, Math.min(100, r.pct));
@@ -583,7 +625,7 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
                   key={r.program}
                   type="button"
                   onClick={() => onNavigate('program', { prog: r.program })}
-                  className="w-full text-left rounded-lg p-2 -mx-2 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition group"
+                  className="w-full text-left rounded-lg px-2 py-1.5 -mx-2 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition group"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-14 shrink-0">
@@ -610,11 +652,12 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
                           style={{ left: '95%' }}
                         />
                       </div>
-                      <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+                      <div className="mt-1 flex flex-wrap gap-x-2.5 gap-y-0.5 text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
                         <span>• Realisasi {fmtInt(r.realisasi)}</span>
                         <span>• TSGO {fmtInt(r.tsgo)}</span>
                         <span>• Belum {fmtInt(r.belumMasuk)}</span>
                         <span>• Konservasi {fmtInt(r.konservasi)}</span>
+                        {r.lainnya > 0 && <span>• Lainnya {fmtInt(r.lainnya)}</span>}
                       </div>
                     </div>
 
@@ -632,16 +675,18 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
         </div>
 
         {/* Komposisi semua program */}
-        <div className="lg:col-span-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 flex flex-col">
-          <div className="mb-3">
+        <div className="lg:col-span-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+          <div className="mb-2 shrink-0">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Komposisi semua program</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Distribusi status seluruh unit</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Distribusi status seluruh unit{qRange ? ` · TW ${tw}` : ''}
+            </p>
           </div>
           {progMetrics ? (
-            <div className="my-auto">
+            <div className="flex-1 flex flex-col">
               <DonutPanel
-                legendLayout="inline"
-                size={146}
+                legendLayout="stacked-list"
+                size={168}
                 centerValue={fmtInt(progMetrics.sum.total)}
                 centerLabel="unit"
                 onSelect={() => onNavigate('program')}
@@ -670,23 +715,39 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
                     color: '#94A3B8',
                     detailText: `${fmtInt(progMetrics.sum.konservasi)} unit`,
                   },
+                  ...(progMetrics.sum.lainnya > 0
+                    ? [
+                        {
+                          label: 'Lainnya',
+                          value: progMetrics.sum.lainnya,
+                          color: '#6366F1',
+                          detailText: `${fmtInt(progMetrics.sum.lainnya)} unit`,
+                        },
+                      ]
+                    : []),
                 ]}
               />
             </div>
           ) : (
-            <p className="text-xs text-slate-400 py-10 text-center">Data program tidak tersedia.</p>
+            <p className="text-xs text-slate-400 py-10 text-center my-auto">Data program tidak tersedia.</p>
           )}
         </div>
 
         {/* Kurva S */}
-        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 flex flex-col">
-          <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
+        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+          <div className="flex flex-wrap items-start justify-between gap-2 mb-2 shrink-0">
             <div>
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Kurva S: {kurvaMode === 'unit' ? 'Program P24/P48 · MO/GO' : 'Penyerapan Anggaran'}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Perbandingan kumulatif rencana vs realisasi
+                {kurvaMode === 'unit' && kurvaUnit?.lastLabel && kurvaUnit.lastSelisih !== null
+                  ? `${
+                      qRange ? `Kumulatif Jan–${BLN_LABEL[qRange[1] - 1]} (s.d. TW ${tw}) · ` : ''
+                    }Selisih per ${kurvaUnit.lastLabel}: ${kurvaUnit.lastSelisih >= 0 ? '+' : ''}${fmtInt(kurvaUnit.lastSelisih)} unit`
+                  : qRange
+                  ? `Kumulatif Jan–${BLN_LABEL[qRange[1] - 1]} (s.d. TW ${tw}) rencana vs realisasi`
+                  : 'Perbandingan kumulatif rencana vs realisasi'}
               </p>
             </div>
             {kurvaRupiah && (
@@ -726,7 +787,7 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
               formatValue={(v) => fmtM(v)}
               formatSelisih={(v) => `${v >= 0 ? '+' : ''}${fmtM(v)}`}
               isDark={isDark}
-              heightClass="h-56"
+              heightClass="flex-1 min-h-[260px]"
               showSummaryStrip={false}
             />
           ) : kurvaUnit ? (
@@ -736,20 +797,20 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
               realisasi={kurvaUnit.realCum}
               unitLabel="unit"
               isDark={isDark}
-              heightClass="h-56"
+              heightClass="flex-1 min-h-[260px]"
               showSummaryStrip={false}
             />
           ) : (
-            <p className="text-xs text-slate-400 py-10 text-center">Data Kurva S belum tersedia.</p>
+            <p className="text-xs text-slate-400 py-10 text-center my-auto">Data Kurva S belum tersedia.</p>
           )}
         </div>
       </div>
 
       {/* Bottom 3-column Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
         {/* Top 6 Cost Items */}
-        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-          <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+          <div className="flex items-start justify-between gap-2 mb-2 shrink-0">
             <div>
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Anggaran terbesar per cost item
@@ -767,7 +828,7 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
             </button>
           </div>
 
-          <div className="space-y-3">
+          <div className="flex-1 flex flex-col justify-between gap-2">
             {topCostItems.map((c) => {
               const t = statusTier(c.pct);
               const w = Math.max(0, Math.min(100, c.pct));
@@ -799,18 +860,18 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
         </div>
 
         {/* Nilai kontrak per tipe */}
-        <div className="lg:col-span-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 flex flex-col">
-          <div className="mb-3">
+        <div className="lg:col-span-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+          <div className="mb-2 shrink-0">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Nilai kontrak per tipe</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               UMDS, SPK, dan Kontrak{qRange ? ` · ${twLabelText(tw)}` : ''}
             </p>
           </div>
           {nilaiPerTipe.segments.length > 0 ? (
-            <div className="my-auto">
+            <div className="flex-1 flex flex-col">
               <DonutPanel
-                legendLayout="list"
-                size={132}
+                legendLayout="stacked-list"
+                size={144}
                 centerValue={fmtM(nilaiPerTipe.total)}
                 centerLabel="total nilai"
                 onSelect={() => onNavigate('pengadaan')}
@@ -818,13 +879,13 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
               />
             </div>
           ) : (
-            <p className="text-xs text-slate-400 py-10 text-center">Belum ada nilai kontrak.</p>
+            <p className="text-xs text-slate-400 py-10 text-center my-auto">Belum ada nilai kontrak.</p>
           )}
         </div>
 
         {/* Perlu perhatian */}
-        <div className="lg:col-span-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-          <div className="mb-3">
+        <div className="lg:col-span-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+          <div className="mb-2 shrink-0">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Perlu perhatian</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Klik item untuk membuka halaman terkait

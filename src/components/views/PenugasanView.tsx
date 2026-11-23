@@ -114,8 +114,8 @@ export const PenugasanView: React.FC<PenugasanViewProps> = ({ penugasan }) => {
   const hasFilter = Boolean(fStatus || fTipe);
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <KpiCard title="Total penugasan" value={fmtInt(penugasan.total)} subline="Paket penugasan 2025" accentColor="blue" />
         <KpiCard title="Total nilai RAB" value={fmtM(penugasan.nilaiRab)} subline={fmtRp(penugasan.nilaiRab)} accentColor="blue" />
         <KpiCard
@@ -161,13 +161,13 @@ export const PenugasanView: React.FC<PenugasanViewProps> = ({ penugasan }) => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <div className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Progres penugasan</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 mb-3">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 mb-2">
             Klik baris progres untuk menyaring tabel
           </p>
-          <div className="space-y-2.5">
+          <div className="flex-1 flex flex-col justify-between gap-1.5">
             {statusEntries.map(([st, cnt]) => {
               const active = fStatus === st;
               const isBatal = /batal|gagal/i.test(st);
@@ -199,13 +199,14 @@ export const PenugasanView: React.FC<PenugasanViewProps> = ({ penugasan }) => {
           </div>
         </div>
 
-        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 flex flex-col">
+        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Komposisi tipe penugasan</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 mb-3">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 mb-2">
             Klik tipe untuk menyaring daftar penugasan
           </p>
-          <div className="my-auto">
+          <div className="flex-1 flex flex-col">
             <DonutPanel
+              size={180}
               centerValue={fmtInt(penugasan.total)}
               centerLabel="paket"
               activeLabel={fTipe}

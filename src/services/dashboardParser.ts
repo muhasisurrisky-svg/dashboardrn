@@ -429,7 +429,7 @@ function parseProgram(sheetsMap: Record<string, string[][]>, namaSum: string, na
   const ringkas: ProgramRingkasItem[] = [];
   for (let i = hr + 1; i < v.length; i++) {
     const p = String(v[i][hc] || '').trim();
-    if (!p || !/^[A-Za-z]/.test(p)) break;
+    if (!p || !/^[A-Za-z]/.test(p) || barisTotal_(p)) break;
     const total = iT > -1 ? num_(v[i][hc + iT]) : 0;
     const real = iR > -1 ? num_(v[i][hc + iR]) : 0;
     ringkas.push({
@@ -469,6 +469,10 @@ function parseProgram(sheetsMap: Record<string, string[][]>, namaSum: string, na
       const kolTgl = tampil.filter((i) => /^tgl/.test(headN[i]));
 
       if (iP > -1 && iKat > -1 && iRen > -1 && iPro > -1) {
+        const semuaBulan: ProgramBulanSeries = {
+          rencana: new Array(12).fill(0),
+          realisasi: new Array(12).fill(0),
+        };
         rows.forEach((r) => {
           const p = String(r[iP] || '').trim();
           if (!p) return;
@@ -479,8 +483,14 @@ function parseProgram(sheetsMap: Record<string, string[][]>, namaSum: string, na
           const mr = Math.round(num_(r[iRen]));
           const mp = Math.round(num_(r[iPro]));
           const real = norm_(r[iKat]) === 'realisasi';
-          if (mr >= 1 && mr <= 12) bulan[p].rencana[mr - 1]++;
-          if (real && mp >= 1 && mp <= 12) bulan[p].realisasi[mp - 1]++;
+          if (mr >= 1 && mr <= 12) {
+            bulan[p].rencana[mr - 1]++;
+            semuaBulan.rencana[mr - 1]++;
+          }
+          if (real && mp >= 1 && mp <= 12) {
+            bulan[p].realisasi[mp - 1]++;
+            semuaBulan.realisasi[mp - 1]++;
+          }
           detail[p].push({
             c: tampil.map((i) => (kolTgl.indexOf(i) > -1 ? rapikanTgl_(r[i]) : String(r[i] ?? ''))),
             mr,
@@ -488,10 +498,96 @@ function parseProgram(sheetsMap: Record<string, string[][]>, namaSum: string, na
             real,
           });
         });
+        if (semuaBulan.rencana.some((n) => n > 0) || semuaBulan.realisasi.some((n) => n > 0)) {
+          bulan.__SEMUA__ = semuaBulan;
+        }
       }
     }
   } catch {
     // optional detail sheet
+  }
+
+  // Fallback: parse "2. Rencana vs Realisasi per Bulan" section on summary sheet if bulan.__SEMUA__ is missing
+  if (!bulan.__SEMUA__) {
+    try {
+      let br = -1;
+      let bc = -1;
+      for (let i = hr + 1; i < v.length && br < 0; i++) {
+        for (let j = 0; j < v[i].length; j++) {
+          if (norm_(v[i][j]) === 'bulan') {
+            br = i;
+            bc = j;
+            break;
+          }
+        }
+      }
+      if (br > -1 && bc > -1) {
+        const bHead1 = v[br].map(norm_);
+        const bHead2 = (v[br + 1] || []).map(norm_);
+        const iTotRen = bHead1.findIndex((x, j) => j > bc && x === 'total rencana');
+        const iTotReal = bHead1.findIndex((x, j) => j > bc && x === 'total realisasi');
+
+        // Map per-program Rencana/Realisasi column pairs in Section 2
+        const progPairs: Record<string, { renCol: number; realCol: number }> = {};
+        let curProg = '';
+        for (let j = bc + 1; j < bHead1.length; j++) {
+          const h1 = String(v[br][j] || '').trim();
+          const h1n = norm_(h1);
+          if (h1 && !h1n.startsWith('total') && !h1n.startsWith('kum')) {
+            curProg = h1;
+          } else if (h1n.startsWith('total') || h1n.startsWith('kum')) {
+            curProg = '';
+          }
+          const h2n = bHead2[j] || '';
+          if (curProg && (h2n === 'rencana' || h2n === 'realisasi')) {
+            if (!progPairs[curProg]) progPairs[curProg] = { renCol: -1, realCol: -1 };
+            if (h2n === 'rencana') progPairs[curProg].renCol = j;
+            if (h2n === 'realisasi') progPairs[curProg].realCol = j;
+          }
+        }
+
+        const semuaFallback: ProgramBulanSeries = {
+          rencana: new Array(12).fill(0),
+          realisasi: new Array(12).fill(0),
+        };
+        const hasSubRow = bHead2.some((x) => x === 'rencana' || x === 'realisasi');
+        for (let i = br + (hasSubRow ? 2 : 1); i < v.length; i++) {
+          const bName = norm_(v[i][bc]);
+          if (!bName || barisTotal_(bName)) break;
+          const mNum = BLN_MAP_[bName];
+          if (!mNum || mNum < 1 || mNum > 12) continue;
+          const idx = mNum - 1;
+
+          let rowRen = iTotRen > -1 ? num_(v[i][iTotRen]) : 0;
+          let rowReal = iTotReal > -1 ? num_(v[i][iTotReal]) : 0;
+          let sumPairRen = 0;
+          let sumPairReal = 0;
+
+          Object.entries(progPairs).forEach(([pName, cols]) => {
+            if (!bulan[pName]) {
+              bulan[pName] = { rencana: new Array(12).fill(0), realisasi: new Array(12).fill(0) };
+            }
+            const rVal = cols.renCol > -1 ? num_(v[i][cols.renCol]) : 0;
+            const aVal = cols.realCol > -1 ? num_(v[i][cols.realCol]) : 0;
+            bulan[pName].rencana[idx] = rVal;
+            bulan[pName].realisasi[idx] = aVal;
+            sumPairRen += rVal;
+            sumPairReal += aVal;
+          });
+
+          if (iTotRen < 0) rowRen = sumPairRen;
+          if (iTotReal < 0) rowReal = sumPairReal;
+          semuaFallback.rencana[idx] = rowRen;
+          semuaFallback.realisasi[idx] = rowReal;
+        }
+
+        if (semuaFallback.rencana.some((n) => n > 0) || semuaFallback.realisasi.some((n) => n > 0)) {
+          bulan.__SEMUA__ = semuaFallback;
+        }
+      }
+    } catch {
+      // optional monthly summary section
+    }
   }
 
   // Re-sync summary counts from detail rows
@@ -511,13 +607,7 @@ function parseProgram(sheetsMap: Record<string, string[][]>, namaSum: string, na
       hit[norm_(p)] = c;
     });
 
-    const jml = { total: 0, realisasi: 0, tsgo: 0, belumMasuk: 0, konservasi: 0, lainnya: 0 };
-    let barisTotalItem: ProgramRingkasItem | null = null;
     ringkas.forEach((r) => {
-      if (norm_(r.program) === 'total') {
-        barisTotalItem = r;
-        return;
-      }
       const c = hit[norm_(r.program)];
       if (!c) return;
       r.total = c.total;
@@ -526,24 +616,8 @@ function parseProgram(sheetsMap: Record<string, string[][]>, namaSum: string, na
       r.belumMasuk = c.belumMasuk;
       r.konservasi = c.konservasi;
       r.lainnya = c.lainnya;
-      jml.total += c.total;
-      jml.realisasi += c.realisasi;
-      jml.tsgo += c.tsgo;
-      jml.belumMasuk += c.belumMasuk;
-      jml.konservasi += c.konservasi;
-      jml.lainnya += c.lainnya;
       r.pct = r.total > 0 ? (r.realisasi / r.total) * 100 : 0;
     });
-    if (barisTotalItem) {
-      const bt = barisTotalItem as ProgramRingkasItem;
-      bt.total = jml.total;
-      bt.realisasi = jml.realisasi;
-      bt.tsgo = jml.tsgo;
-      bt.belumMasuk = jml.belumMasuk;
-      bt.konservasi = jml.konservasi;
-      bt.lainnya = jml.lainnya;
-      bt.pct = bt.total > 0 ? (bt.realisasi / bt.total) * 100 : 0;
-    }
   }
 
   return { ringkas, bulan, detail, detailHead };

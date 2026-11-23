@@ -42,6 +42,7 @@ export function ChartCanvas({
   heightClass = 'h-64',
   ariaLabel,
 }: ChartCanvasProps) {
+  const wrapRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const chartRef = useRef<Chart | null>(null);
 
@@ -68,9 +69,39 @@ export function ChartCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDark, ...deps]);
 
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    let rafId = 0;
+    let lastW = Math.round(el.clientWidth);
+    let lastH = Math.round(el.clientHeight);
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      const w = entry ? Math.round(entry.contentRect.width) : Math.round(el.clientWidth);
+      const h = entry ? Math.round(entry.contentRect.height) : Math.round(el.clientHeight);
+      if (w === lastW && h === lastH) return;
+      lastW = w;
+      lastH = h;
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        if (w > 0 && h > 0) {
+          chartRef.current?.resize();
+        }
+      });
+    });
+    ro.observe(el);
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      ro.disconnect();
+    };
+  }, []);
+
   return (
-    <div className={`relative w-full ${heightClass}`}>
-      <canvas ref={canvasRef} aria-label={ariaLabel} />
+    <div ref={wrapRef} className={`relative w-full min-h-0 ${heightClass}`}>
+      <div className="absolute inset-0">
+        <canvas ref={canvasRef} aria-label={ariaLabel} />
+      </div>
     </div>
   );
 }

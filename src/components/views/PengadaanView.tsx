@@ -233,7 +233,7 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* 5 Interactive KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         <KpiCard
@@ -327,25 +327,28 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
       )}
 
       {/* Middle Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-          <div className="mb-3">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+          <div className="mb-2 shrink-0">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Komposisi tipe pengadaan</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Klik tipe atau segmen untuk menyaring data
             </p>
           </div>
-          <DonutPanel
-            centerValue={fmtInt(tipeAgg.totalCnt)}
-            centerLabel="dokumen"
-            activeLabel={fTipe}
-            onSelect={(lbl) => setFTipe((cur) => (cur === lbl ? null : lbl))}
-            segments={tipeAgg.countSegs}
-          />
+          <div className="flex-1 flex flex-col">
+            <DonutPanel
+              size={180}
+              centerValue={fmtInt(tipeAgg.totalCnt)}
+              centerLabel="dokumen"
+              activeLabel={fTipe}
+              onSelect={(lbl) => setFTipe((cur) => (cur === lbl ? null : lbl))}
+              segments={tipeAgg.countSegs}
+            />
+          </div>
         </div>
 
-        <div className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-          <div className="mb-3">
+        <div className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+          <div className="mb-2 shrink-0">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               Total Pengadaan per Bulan {tahun}
             </h3>
@@ -355,7 +358,7 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
           </div>
           <ChartCanvas
             isDark={isDark}
-            heightClass="h-52"
+            heightClass="flex-1 min-h-[250px]"
             deps={[monthlyCounts, fBulan, twMask]}
             buildConfig={(_, dark) => {
               const labelPlugin: Plugin<'bar'> = {
@@ -392,7 +395,7 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
                         return dark ? '#60A5FA' : '#2F52B3';
                       }),
                       borderRadius: 6,
-                      maxBarThickness: 36,
+                      maxBarThickness: 42,
                     },
                   ],
                 },
@@ -413,16 +416,16 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
                       },
                     },
                   },
-                  layout: { padding: { top: 20 } },
+                  layout: { padding: { top: 18, right: 4, bottom: 0, left: 0 } },
                   scales: {
                     x: {
                       grid: { display: false },
-                      ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 } },
+                      ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 }, padding: 4 },
                     },
                     y: {
                       beginAtZero: true,
                       grid: { color: dark ? 'rgba(148,163,184,0.12)' : 'rgba(15,23,42,0.06)' },
-                      ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 } },
+                      ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 }, padding: 4 },
                     },
                   },
                 },
@@ -434,25 +437,28 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
       </div>
 
       {/* Bottom 2-column Row: Nilai per Tipe + Kategori Vendor */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-          <div className="mb-3">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+          <div className="mb-2 shrink-0">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Nilai per tipe pengadaan</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Akumulasi nilai kontrak per jenis dokumen
             </p>
           </div>
-          <DonutPanel
-            centerValue={fmtM(tipeAgg.totalVal)}
-            centerLabel="total nilai"
-            activeLabel={fTipe}
-            onSelect={(lbl) => setFTipe((cur) => (cur === lbl ? null : lbl))}
-            segments={tipeAgg.valueSegs}
-          />
+          <div className="flex-1 flex flex-col">
+            <DonutPanel
+              size={180}
+              centerValue={fmtM(tipeAgg.totalVal)}
+              centerLabel="total nilai"
+              activeLabel={fTipe}
+              onSelect={(lbl) => setFTipe((cur) => (cur === lbl ? null : lbl))}
+              segments={tipeAgg.valueSegs}
+            />
+          </div>
         </div>
 
         <div className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden flex flex-col">
-          <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+          <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 shrink-0">
             <div>
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Kategori Vendor</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -471,7 +477,7 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
             </div>
           </div>
 
-          <div className="overflow-x-auto max-h-60">
+          <div className="overflow-x-auto max-h-72 flex-1">
             <table className="w-full text-left border-collapse">
               <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider text-slate-500">
                 <tr>

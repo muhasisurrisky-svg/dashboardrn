@@ -61,9 +61,9 @@ export const SCurveChart: React.FC<SCurveChartProps> = ({
   const tier = summary ? statusTier(summary.pct) : null;
 
   return (
-    <div className="space-y-3">
+    <div className="flex-1 flex flex-col min-h-0 gap-2.5">
       {showSummaryStrip && summary && tier && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 shrink-0">
           <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 px-3 py-2">
             <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
               Rencana per {summary.label}
@@ -151,8 +151,8 @@ export const SCurveChart: React.FC<SCurveChartProps> = ({
                 c.stroke();
               }
 
-              // Small pill badge to the right/left of point
-              c.font = '600 11px "DM Sans", sans-serif';
+              // Small pill badge near the latest Realisasi point
+              c.font = '600 11px "Plus Jakarta Sans", sans-serif';
               const tw = c.measureText(label).width;
               const bw = tw + 14;
               const bh = 22;
@@ -162,12 +162,16 @@ export const SCurveChart: React.FC<SCurveChartProps> = ({
                 : Math.max(p1.y - bh - 8, chart.chartArea.top + 4);
 
               c.fillStyle = sel >= 0
-                ? (dark ? 'rgba(6, 78, 59, 0.9)' : 'rgba(236, 253, 245, 0.96)')
-                : (dark ? 'rgba(127, 29, 29, 0.9)' : 'rgba(254, 242, 242, 0.96)');
+                ? (dark ? 'rgba(6, 78, 59, 0.92)' : 'rgba(236, 253, 245, 0.96)')
+                : (dark ? 'rgba(127, 29, 29, 0.92)' : 'rgba(254, 242, 242, 0.96)');
               c.strokeStyle = sel >= 0 ? 'rgba(16, 185, 129, 0.45)' : 'rgba(239, 68, 68, 0.45)';
               c.lineWidth = 1;
               c.beginPath();
-              c.roundRect(bx, by, bw, bh, 6);
+              if (typeof c.roundRect === 'function') {
+                c.roundRect(bx, by, bw, bh, 6);
+              } else {
+                c.rect(bx, by, bw, bh);
+              }
               c.fill();
               c.stroke();
 
@@ -218,16 +222,17 @@ export const SCurveChart: React.FC<SCurveChartProps> = ({
             options: {
               responsive: true,
               maintainAspectRatio: false,
+              layout: { padding: { top: 6, right: 6, bottom: 0, left: 0 } },
               interaction: { mode: 'index', intersect: false },
               plugins: {
                 legend: {
                   position: 'bottom',
                   labels: {
                     color: textMuted,
-                    boxWidth: 12,
-                    boxHeight: 12,
+                    boxWidth: 10,
+                    boxHeight: 10,
                     usePointStyle: true,
-                    padding: 14,
+                    padding: 8,
                     font: { size: 11, weight: 'bold' },
                   },
                 },
@@ -250,7 +255,7 @@ export const SCurveChart: React.FC<SCurveChartProps> = ({
               scales: {
                 x: {
                   grid: { display: false },
-                  ticks: { color: textMuted, font: { size: 11 } },
+                  ticks: { color: textMuted, font: { size: 11 }, padding: 4 },
                 },
                 y: {
                   beginAtZero: true,
@@ -259,6 +264,7 @@ export const SCurveChart: React.FC<SCurveChartProps> = ({
                   ticks: {
                     color: textMuted,
                     font: { size: 11 },
+                    padding: 4,
                     callback: (v: string | number) => (isPercentScale ? `${v}%` : fmtInt(Number(v))),
                   },
                 },

@@ -15,7 +15,7 @@ interface DonutPanelProps {
   activeLabel?: string | null;
   onSelect?: (label: string) => void;
   size?: number;
-  legendLayout?: 'list' | 'inline';
+  legendLayout?: 'list' | 'inline' | 'stacked-list';
   showPctInLegend?: boolean;
 }
 
@@ -25,14 +25,14 @@ export const DonutPanel: React.FC<DonutPanelProps> = ({
   centerLabel,
   activeLabel,
   onSelect,
-  size = 152,
+  size = 176,
   legendLayout = 'list',
   showPctInLegend = true,
 }) => {
   const total = segments.reduce((s, d) => s + Math.max(0, d.value), 0);
   const cx = 80;
   const cy = 80;
-  const r = 58;
+  const r = 60;
   const circ = 2 * Math.PI * r;
 
   let offset = 0;
@@ -49,15 +49,22 @@ export const DonutPanel: React.FC<DonutPanelProps> = ({
     };
   });
 
+  const isList = legendLayout === 'list' || legendLayout === 'stacked-list';
+
   return (
     <div
       className={
         legendLayout === 'list'
-          ? 'flex flex-col sm:flex-row items-center gap-5'
-          : 'flex flex-col items-center gap-4'
+          ? 'w-full h-full flex-1 flex flex-col sm:flex-row items-center justify-between gap-4'
+          : legendLayout === 'stacked-list'
+          ? 'w-full h-full flex-1 flex flex-col items-center justify-between gap-3'
+          : 'w-full h-full flex-1 flex flex-col items-center justify-between gap-3'
       }
     >
-      <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <div
+        className={`relative shrink-0 ${legendLayout !== 'list' ? 'my-auto' : ''}`}
+        style={{ width: size, height: size }}
+      >
         <svg viewBox="0 0 160 160" className="w-full h-full -rotate-90">
           <circle
             cx={cx}
@@ -93,7 +100,7 @@ export const DonutPanel: React.FC<DonutPanelProps> = ({
           })}
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-3">
-          <span className="text-xl font-bold text-slate-900 dark:text-slate-100 tabular-nums leading-tight">
+          <span className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tabular-nums leading-tight">
             {centerValue}
           </span>
           <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
@@ -102,8 +109,8 @@ export const DonutPanel: React.FC<DonutPanelProps> = ({
         </div>
       </div>
 
-      {legendLayout === 'list' ? (
-        <div className="flex-1 w-full space-y-2">
+      {isList ? (
+        <div className={legendLayout === 'stacked-list' ? 'w-full space-y-0.5' : 'flex-1 w-full min-w-0 space-y-1'}>
           {arcs.map((a) => {
             const isActive = activeLabel === a.label;
             const isDim = activeLabel && !isActive;
@@ -113,7 +120,7 @@ export const DonutPanel: React.FC<DonutPanelProps> = ({
                 type="button"
                 disabled={!onSelect}
                 onClick={() => onSelect?.(a.label)}
-                className={`w-full flex items-center justify-between gap-3 rounded-lg px-2.5 py-1.5 text-left text-xs transition ${
+                className={`w-full flex items-center justify-between gap-2 rounded-lg px-2 py-1 text-left text-xs transition ${
                   onSelect ? 'hover:bg-slate-100 dark:hover:bg-slate-800/70 cursor-pointer' : 'cursor-default'
                 } ${isActive ? 'bg-slate-100 dark:bg-slate-800 ring-1 ring-blue-500/40' : ''} ${
                   isDim ? 'opacity-50' : ''
@@ -123,9 +130,9 @@ export const DonutPanel: React.FC<DonutPanelProps> = ({
                   <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
                   <span className="font-medium text-slate-700 dark:text-slate-200 truncate">{a.label}</span>
                 </span>
-                <span className="flex items-center gap-2 shrink-0 tabular-nums">
+                <span className="flex items-center gap-2.5 shrink-0 tabular-nums">
                   {showPctInLegend && (
-                    <span className="text-slate-400 dark:text-slate-500">{fmtP(a.frac * 100)}</span>
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500">{fmtP(a.frac * 100)}</span>
                   )}
                   <span className="font-semibold text-slate-900 dark:text-slate-100">
                     {a.detailText || fmtInt(a.value)}
@@ -136,7 +143,7 @@ export const DonutPanel: React.FC<DonutPanelProps> = ({
           })}
         </div>
       ) : (
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
+        <div className="w-full flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
           {arcs.map((a) => {
             const isActive = activeLabel === a.label;
             const isDim = activeLabel && !isActive;
@@ -146,7 +153,7 @@ export const DonutPanel: React.FC<DonutPanelProps> = ({
                 type="button"
                 disabled={!onSelect}
                 onClick={() => onSelect?.(a.label)}
-                className={`inline-flex items-center gap-1.5 text-xs rounded-md px-2 py-1 transition ${
+                className={`inline-flex items-center gap-1.5 text-xs rounded-md px-1.5 py-0.5 transition ${
                   onSelect ? 'hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer' : 'cursor-default'
                 } ${isActive ? 'bg-slate-100 dark:bg-slate-800 ring-1 ring-blue-500/40' : ''} ${
                   isDim ? 'opacity-50' : ''

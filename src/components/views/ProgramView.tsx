@@ -52,7 +52,24 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
 
   const sCurveData = useMemo(() => {
     if (!program) return null;
-    const s = program.bulan[kurvaProg] || program.bulan.__SEMUA__;
+    let s = program.bulan[kurvaProg];
+    if (!s && kurvaProg === '__SEMUA__') {
+      const keys = Object.keys(program.bulan).filter((k) => k !== '__SEMUA__');
+      if (keys.length) {
+        const sumRen = new Array(12).fill(0);
+        const sumReal = new Array(12).fill(0);
+        keys.forEach((k) => {
+          const item = program.bulan[k];
+          if (!item) return;
+          for (let i = 0; i < 12; i++) {
+            sumRen[i] += item.rencana[i] || 0;
+            sumReal[i] += item.realisasi[i] || 0;
+          }
+        });
+        s = { rencana: sumRen, realisasi: sumReal };
+      }
+    }
+    if (!s) s = program.bulan.__SEMUA__;
     if (!s) return null;
     const labels: string[] = [];
     const ren: Array<number | null> = [];
@@ -64,26 +81,72 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
       if ((s.realisasi[i] || 0) > 0) lastRealIdx = i;
     }
     for (let i = 0; i < 12; i++) {
-      if (qRange && (i + 1 < qRange[0] || i + 1 > qRange[1])) continue;
+      if (qRange && i + 1 > qRange[1]) continue;
       labels.push(BLN_LABEL[i]);
       cRen += s.rencana[i] || 0;
       cReal += s.realisasi[i] || 0;
       ren.push(cRen);
       real.push(i <= lastRealIdx ? cReal : null);
     }
+    if (cRen === 0 && lastRealIdx < 0) return null;
     return { labels, ren, real };
   }, [program, kurvaProg, qRange]);
 
   const ringkasSorted = useMemo(() => {
     if (!program) return [];
-    return program.ringkas
+    const baseList = program.ringkas
+      .filter((r) => !/^(grand\s*total|sub\s*total|total|jumlah)\s*:?$/i.test(r.program.trim()))
       .slice()
       .sort((a, b) => {
         const ia = PROG_ORDER.indexOf(a.program);
         const ib = PROG_ORDER.indexOf(b.program);
         return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
       });
-  }, [program]);
+
+    if (!qRange) return baseList;
+
+    return baseList.map((base) => {
+      const det = (program.detail[base.program] || []).filter(
+        (d) => d.mr >= qRange[0] && d.mr <= qRange[1]
+      );
+      if (!det.length) {
+        return {
+          ...base,
+          total: 0,
+          realisasi: 0,
+          tsgo: 0,
+          belumMasuk: 0,
+          konservasi: 0,
+          lainnya: 0,
+          pct: 0,
+        };
+      }
+      let realisasi = 0;
+      let tsgo = 0;
+      let belumMasuk = 0;
+      let konservasi = 0;
+      let lainnya = 0;
+      det.forEach((d) => {
+        const st = d.c.join(' ').toLowerCase();
+        if (d.real) realisasi++;
+        else if (/\btsgo\b/.test(st)) tsgo++;
+        else if (/belum/.test(st)) belumMasuk++;
+        else if (/konser|geser/.test(st)) konservasi++;
+        else lainnya++;
+      });
+      const total = det.length;
+      return {
+        program: base.program,
+        total,
+        realisasi,
+        tsgo,
+        belumMasuk,
+        konservasi,
+        lainnya,
+        pct: total > 0 ? (realisasi / total) * 100 : 0,
+      };
+    });
+  }, [program, qRange]);
 
   const totalsRingkas = useMemo(() => {
     return ringkasSorted.reduce(
@@ -103,7 +166,20 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
   const barSeries = useMemo(() => {
     if (!program) return { rencana: new Array(12).fill(0), realisasi: new Array(12).fill(0) };
     const key = segProg === 'Semua' ? '__SEMUA__' : segProg;
-    return program.bulan[key] || { rencana: new Array(12).fill(0), realisasi: new Array(12).fill(0) };
+    if (program.bulan[key]) return program.bulan[key];
+    if (key === '__SEMUA__') {
+      const sumRen = new Array(12).fill(0);
+      const sumReal = new Array(12).fill(0);
+      Object.entries(program.bulan).forEach(([k, s]) => {
+        if (k === '__SEMUA__' || !s) return;
+        for (let i = 0; i < 12; i++) {
+          sumRen[i] += s.rencana[i] || 0;
+          sumReal[i] += s.realisasi[i] || 0;
+        }
+      });
+      return { rencana: sumRen, realisasi: sumReal };
+    }
+    return { rencana: new Array(12).fill(0), realisasi: new Array(12).fill(0) };
   }, [program, segProg]);
 
   const donutStats = useMemo(() => {
@@ -167,16 +243,18 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
   const hasFilter = Boolean(filterProg || filterBulan || filterStatus);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Kurva S Realisasi Program (Top-level Card — no nested card clutter) */}
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-        <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+        <div className="flex flex-wrap items-start justify-between gap-2 mb-2 shrink-0">
           <div>
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               Kurva S realisasi program {kurvaProg === '__SEMUA__' ? 'P24/P48 · MO/GO' : kurvaProg}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Kumulatif unit rencana vs realisasi produksi
+              {qRange
+                ? `Kumulatif Jan–${BLN_LABEL[qRange[1] - 1]} (s.d. TW ${tw}) · rencana masuk vs realisasi produksi`
+                : 'Kumulatif unit rencana vs realisasi produksi'}
             </p>
           </div>
           <select
@@ -201,7 +279,7 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
             realisasi={sCurveData.real}
             unitLabel="unit"
             isDark={isDark}
-            heightClass="h-64"
+            heightClass="h-64 sm:h-72"
           />
         ) : (
           <p className="text-xs text-slate-400 py-8 text-center">Data kurva belum tersedia.</p>
@@ -212,7 +290,9 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
       <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
           <div>
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Status unit per program</h3>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+              Status unit per program{qRange ? ` · Rencana TW ${tw}` : ''}
+            </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Klik baris program untuk menyaring grafik komposisi dan daftar unit di bawah
             </p>
@@ -293,9 +373,9 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
       </div>
 
       {/* Grouped Bar + Status Donut */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-          <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <div className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+          <div className="flex flex-wrap items-start justify-between gap-2 mb-2 shrink-0">
             <div>
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Realisasi vs rencana per bulan
@@ -327,7 +407,7 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
 
           <ChartCanvas
             isDark={isDark}
-            heightClass="h-56"
+            heightClass="flex-1 min-h-[260px]"
             deps={[barSeries, filterBulan, twMask]}
             buildConfig={(_, dark) => ({
               type: 'bar',
@@ -359,6 +439,7 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
               options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: { padding: { top: 4, right: 4, bottom: 0, left: 0 } },
                 onClick: (_evt: unknown, elements: Array<{ index: number }>) => {
                   if (elements.length > 0) {
                     const m = elements[0].index + 1;
@@ -368,18 +449,24 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
                 plugins: {
                   legend: {
                     position: 'bottom',
-                    labels: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 } },
+                    labels: {
+                      color: dark ? '#94A3B8' : '#64748B',
+                      boxWidth: 10,
+                      boxHeight: 10,
+                      padding: 8,
+                      font: { size: 11 },
+                    },
                   },
                 },
                 scales: {
                   x: {
                     grid: { display: false },
-                    ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 } },
+                    ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 }, padding: 4 },
                   },
                   y: {
                     beginAtZero: true,
                     grid: { color: dark ? 'rgba(148,163,184,0.12)' : 'rgba(15,23,42,0.06)' },
-                    ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 } },
+                    ticks: { color: dark ? '#94A3B8' : '#64748B', font: { size: 11 }, padding: 4 },
                   },
                 },
               },
@@ -387,18 +474,19 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
           />
         </div>
 
-        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 flex flex-col">
-          <div className="mb-3">
+        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+          <div className="mb-2 shrink-0">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              Komposisi status unit · {filterProg || 'Semua program'}
+              Komposisi status unit · {filterProg || 'Semua program'}{qRange ? ` · TW ${tw}` : ''}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Klik status untuk memfilter daftar unit di bawah
             </p>
           </div>
-          <div className="my-auto">
+          <div className="flex-1 flex flex-col">
             <DonutPanel
-              legendLayout="inline"
+              legendLayout="list"
+              size={180}
               centerValue={fmtInt(donutStats.total)}
               centerLabel="total unit"
               activeLabel={filterStatus}
@@ -408,7 +496,9 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
                 { label: 'TSGO', value: donutStats.tsgo, color: '#3B82F6' },
                 { label: 'Belum masuk', value: donutStats.belumMasuk, color: '#F59E0B' },
                 { label: 'Konservasi', value: donutStats.konservasi, color: '#94A3B8' },
-                { label: 'Lainnya', value: donutStats.lainnya, color: '#6366F1' },
+                ...(donutStats.lainnya > 0
+                  ? [{ label: 'Lainnya', value: donutStats.lainnya, color: '#6366F1' }]
+                  : []),
               ]}
             />
           </div>
