@@ -460,7 +460,7 @@ async function fetchPublicBatchValues(
 /* ------------------------------------------------------------------
    Express Server Setup
 ------------------------------------------------------------------ */
-async function main() {
+export function createApp() { {
   const app = express();
   app.set('trust proxy', true);
   app.use(express.json({ limit: '2mb' }));
@@ -780,13 +780,15 @@ async function main() {
     }
   });
 
-  /* --- Vite Dev Middleware / Production Static --- */
+    return app;
+}
+
+async function start() {
+  const app = createApp();
+
   if (process.env.NODE_ENV !== 'production') {
     const { createServer } = await import('vite');
-    const vite = await createServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
+    const vite = await createServer({ server: { middlewareMode: true }, appType: 'spa' });
     app.use(vite.middlewares);
   } else {
     const distDir = path.resolve(process.cwd(), 'dist');
@@ -801,4 +803,5 @@ async function main() {
   });
 }
 
-main();
+// Di Vercel server tidak di-listen; yang dipakai function di api/index.ts
+if (!process.env.VERCEL) start();
