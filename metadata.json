@@ -1,0 +1,8 @@
+{
+  "name": "Dashboard Monitoring Unit Perencanaan & Fasilitas",
+  "description": "Dashboard monitoring interaktif Unit Perencanaan dan Unit Fasilitas UPT Balai Yasa Surabaya Gubeng yang terhubung langsung ke Google Sheets.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,1637 @@
+/**
+ * DASHBOARD MONITORING UNIT PERENCANAAN 2026 + 2025 + 2027
+ * UPT Balai Yasa Surabaya Gubeng
+ * Code.gs (pasangannya Index.html)
+ */
+
+const SS_ID = '1LVk1C5pWFbmZHiJxodWNnf-grvOKBh_OC8tfzOjerZ4';        // 2026
+const SS_ID_2025 = '1CRYrMhf0BFOfl7RJ3lPxmPiR39KmvT8TBpUCmuJkgDM';    // 2025
+const SS_ID_2027 = '1cP_Sb4kebZ4LHE-tE-Vu_s7KsZ1DHnr-mSq-QIG947c';    // 2027
+
+const MAKS_GAGAL = 5;
+const KUNCI_MENIT = 10; 
+const SESI_JAM = 6;
+
+// true = nilai dokumen gagal/batal tetap dijumlahkan (perilaku lama). Ubah ke false untuk mengecualikannya.
+const NILAI_BATAL_DIHITUNG = false;
+
+const SH = {
+  ANGGARAN: 'ZFM01',
+  ANG_DASH: 'DASHBOARD ANGGARAN',
+  KURVA_ANG: 'KURVA ANGGARAN',   // opsional: Periode | Rencana Kumulatif | Konsumsi Kumulatif (Rupiah)
+  PENGADAAN: 'Rekap Pengadaan / Jasa',
+  PROGRAM_SUM: 'DASHBOARD MO GO,P24 P48',
+  PROGRAM: 'Program-P24,P48',
+  NUS_SUM: 'DASHBOARD PROG KERETA THE NUSANTARA EXPLORER',
+  NUS: 'NUSANTARA EXPLORER',
+  KURVA: 'Rekap KurvaS',
+  SPARE: 'Rekap Suku Cadang'
+};
+
+// Sheet 2025. PROGRAM_SUM dan PROGRAM: GANTI sesuai nama sheet asli di spreadsheet 2025.
+const SH25 = {
+  RKAD: 'RKAD',
+  KURVA_ANG: 'KURVA ANGGARAN',
+  PENGADAAN: 'UMDS, SPK, KONTRAK',
+  SUKCAD_KONTRAK: 'SUKCAD KONTRAK / PERSEDIAAN',
+  SUKCAD_UMDS: 'SUKCAD UMDS',
+  PENUGASAN: 'PENUGASAN',
+  PROGRAM_SUM: 'DASHBOARD MO GO,P24 P48',
+  PROGRAM: 'Program-P24,P48'
+};
+
+const SUMBER_HALAMAN = {
+  ringkasan: [SH.ANGGARAN, SH.KURVA_ANG, SH.PENGADAAN, SH.PROGRAM_SUM, SH.NUS_SUM],
+  anggaran: [SH.ANGGARAN, SH.ANG_DASH, SH.KURVA_ANG],
+  pengadaan: [SH.PENGADAAN],
+  program: [SH.PROGRAM_SUM, SH.PROGRAM],
+  nusantara: [SH.NUS_SUM, SH.NUS, SH.KURVA],
+  suku: [SH.SPARE, SH.PENGADAAN]
+};
+const SUMBER_HALAMAN25 = {
+  ringkasan: [SH25.RKAD, SH25.KURVA_ANG, SH25.PENGADAAN, SH25.PENUGASAN, SH25.PROGRAM_SUM],
+  anggaran: [SH25.RKAD, SH25.KURVA_ANG],
+  pengadaan: [SH25.PENGADAAN],
+  program: [SH25.PROGRAM_SUM, SH25.PROGRAM],
+  suku: [SH25.SUKCAD_KONTRAK, SH25.SUKCAD_UMDS, SH25.PENGADAAN],
+  penugasan: [SH25.PENUGASAN]
+};
+
+// Kolom sheet Program yang ditampilkan di tabel detail (urutan = urutan tampil).
+// Kosongkan [] untuk 8 kolom pertama. Tgl Keluar sengaja di paling kanan.
+const KOLOM_TAMPIL = ['Sumber', 'No Sarana / KAI', 'Jenis', 'Depo', 'Program', 'Bulan Rencana', 'Status', 'Tgl Masuk BY', 'Tgl Keluar'];
+
+const BULAN_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+function doGet() {
+  return HtmlService.createHtmlOutputFromFile('Index')
+    .setTitle('DASHBOARD MONITORING UNIT PERENCANAAN')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+
+/* ---------------------------- Login Admin / User ---------------------------- */
+
+const MAKS_GAGAL_GLOBAL = 40;
+
+function pakaiSandi_() { return true; }
+
+function userKey_() {
+  try { return Session.getTemporaryActiveUserKey() || 'anon'; }
+  catch (e) { return 'anon'; }
+}
+
+/** Perbandingan waktu-konstan. */
+function sama_(a, b) {
+  a = String(a); b = String(b);
+  const n = Math.max(a.length, b.length);
+  let d = a.length ^ b.length;
+  for (let i = 0; i < n; i++) d |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  return d === 0;
+}
+
+function sandiPeran_(role) {
+  const kunci = (role === 'admin') ? 'SANDI_ADMIN' : 'SANDI_USER';
+  return String(PropertiesService.getScriptProperties().getProperty(kunci) || '');
+}
+
+/** Dipanggil dari Index.html. role: 'admin' atau 'user'. */
+function login(role, sandi) {
+  role = (role === 'admin') ? 'admin' : 'user';
+  const cache = CacheService.getScriptCache();
+  const kg = 'gagal_' + userKey_();
+  const gagal = Number(cache.get(kg) || 0);
+  const gagalG = Number(cache.get('gagal_global') || 0);
+  if (gagal >= MAKS_GAGAL || gagalG >= MAKS_GAGAL_GLOBAL) {
+    return { ok: false, pesan: 'Terlalu banyak percobaan. Coba lagi dalam ' + KUNCI_MENIT + ' menit.' };
+  }
+  const benar = sandiPeran_(role);
+  if (!benar) {
+    return { ok: false, pesan: 'Sandi ' + role + ' belum diatur di Script properties.' };
+  }
+  if (sama_(sandi, benar)) {
+    cache.remove(kg);
+    const token = (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, '');
+    cache.put('sesi_' + token, role, Math.min(SESI_JAM, 6) * 3600);
+    return { ok: true, token: token, role: role };
+  }
+  cache.put(kg, String(gagal + 1), KUNCI_MENIT * 60);
+  cache.put('gagal_global', String(gagalG + 1), KUNCI_MENIT * 60);
+  const sisa = MAKS_GAGAL - (gagal + 1);
+  return { ok: false, pesan: sisa > 0 ? 'Sandi salah. Sisa percobaan: ' + sisa + '.' : 'Terlalu banyak percobaan. Coba lagi dalam ' + KUNCI_MENIT + ' menit.' };
+}
+
+function logout(token) {
+  if (token) CacheService.getScriptCache().remove('sesi_' + token);
+  return true;
+}
+
+/** Mengembalikan 'admin' / 'user', atau null bila sesi tidak valid. */
+function peran_(token) {
+  if (!token) return null;
+  const cache = CacheService.getScriptCache();
+  const k = 'sesi_' + token;
+  const r = cache.get(k);
+  if (r !== 'admin' && r !== 'user') return null;
+  cache.put(k, r, Math.min(SESI_JAM, 6) * 3600);
+  return r;
+}
+
+function sesiValid_(token) { return peran_(token) !== null; }
+
+/** Sembunyikan tautan spreadsheet dari akun User. */
+function untukPeran_(data, role) {
+  const out = JSON.parse(JSON.stringify(data));
+  out.peran = role;
+  if (role !== 'admin') {
+    out.urlUtama = '';
+    out.sumber = null;
+  }
+  return out;
+}
+
+/** Dipanggil dari Index.html. tahun: '2026' (default), '2025' atau '2027'. */
+function getDashboardDataAsli_(token, tahun) {
+  if (!sesiValid_(token)) throw new Error('SESI_HABIS');
+  if (String(tahun) === '2025') return getDashboardData2025_();
+  if (String(tahun) === '2027') return getDashboardData2027_();
+
+  const ss = SpreadsheetApp.openById(SS_ID);
+  const errors = [];
+  const safe = function (nama, fn) {
+    try { return fn(ss); }
+    catch (e) { errors.push(nama + ': ' + e.message); return null; }
+  };
+  return {
+    tahun: 2026,
+    hariIni: tglUpdate_(SS_ID),
+    pakaiSandi: pakaiSandi_(),
+    urlUtama: urlSS_(SS_ID),
+    sumber: safe('Sumber data', getSumber_),
+    tglAnggaran: safe('Tanggal anggaran', getTglAnggaran_),
+    anggaran: safe('Anggaran', getAnggaran_),
+    kurvaAnggaran: getKurvaAnggaran_(ss, SH.KURVA_ANG),
+    pengadaan: safe('Pengadaan', getPengadaan_),
+    program: safe('Program', function (s) { return getProgram_(s, SH.PROGRAM_SUM, SH.PROGRAM); }),
+    nusantara: safe('Nusantara', getNusantara_),
+    sukuCadang: safe('Suku Cadang', getSukuCadang_),
+    errors: errors
+  };
+}
+
+/* ---------------------------- Tautan sumber data ---------------------------- */
+
+function urlSS_(id) { return 'https://docs.google.com/spreadsheets/d/' + id + '/edit'; }
+
+/** Tanggal terakhir spreadsheet diedit (butuh izin Drive; kalau gagal, pakai tanggal hari ini). */
+function tglUpdate_(id) {
+  let d;
+  try { d = DriveApp.getFileById(id).getLastUpdated(); } catch (e) { d = new Date(); }
+  return d.getDate() + ' ' + BULAN_ID[d.getMonth()] + ' ' + d.getFullYear();
+}
+
+function bangunSumber_(ss, id, daftarHalaman) {
+  const gid = {};
+  ss.getSheets().forEach(function (s) { gid[s.getName()] = s.getSheetId(); });
+  const hasil = {};
+  Object.keys(daftarHalaman).forEach(function (hal) {
+    const daftar = [], sudah = {};
+    daftarHalaman[hal].forEach(function (nama) {
+      if (sudah[nama] || gid[nama] === undefined) return;
+      sudah[nama] = true;
+      daftar.push({ nama: nama, url: urlSS_(id) + '?gid=' + gid[nama] + '#gid=' + gid[nama] });
+    });
+    hasil[hal] = daftar;
+  });
+  return hasil;
+}
+function getSumber_(ss) { return bangunSumber_(ss, SS_ID, SUMBER_HALAMAN); }
+function getSumber25_(ss) { return bangunSumber_(ss, SS_ID_2025, SUMBER_HALAMAN25); }
+function getSumber27_(ss) { return bangunSumber_(ss, SS_ID_2027, SUMBER_HALAMAN); }
+
+/* ---------------------------- Helper ---------------------------- */
+
+/** Teks angka format Indonesia ("Rp1.234,50", "94,3%", "-0,2%", "5.110") -> number. */
+function num_(v) {
+  if (typeof v === 'number') return v;
+  if (v === null || v === undefined) return 0;
+  let s = String(v).replace(/Rp/gi, '').replace(/[%\s]/g, '');
+  if (!s || s === '-') return 0;
+  let neg = false;
+  if (s.charAt(0) === '-' || (s.charAt(0) === '(' && s.slice(-1) === ')')) {
+    neg = true;
+    s = s.replace(/[-()]/g, '');
+  }
+  if (s.indexOf(',') > -1) {
+    s = s.replace(/\./g, '').replace(',', '.');
+  } else if (/^\d{1,3}(\.\d{3})+$/.test(s)) {
+    s = s.replace(/\./g, '');
+  }
+  const n = parseFloat(s);
+  if (isNaN(n)) return 0;
+  return neg ? -n : n;
+}
+
+function norm_(s) {
+  return String(s === null || s === undefined ? '' : s).replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+/** Klasifikasi status pengadaan. "Belum selesai" / "Belum cair" tidak dihitung Selesai. */
+function katPbj_(s) {
+  s = norm_(s);
+  if (/gagal|batal/.test(s)) return 'Gagal/Batal';
+  if (/\b(belum|tidak|bukan)\b/.test(s)) return 'Dalam Proses';
+  if (/selesai|\bclosed?\b|cair/.test(s)) return 'Selesai';
+  return 'Dalam Proses';
+}
+
+/** Seragamkan penulisan nama vendor: huruf besar, spasi rapi, "PT." -> "PT". */
+function rapiVendor_(s) {
+  s = String(s || '').replace(/\s+/g, ' ').trim().toUpperCase();
+  return s.replace(/^(PT|CV|UD)\.?\s+/, '$1 ').replace(/\s*,\s*/g, ', ');
+}
+
+/** Baris yang isinya hanya "Total", "Jumlah", "Subtotal", atau "Grand total". */
+function barisTotal_(s) {
+  return /^(grand\s*total|sub\s*total|total|jumlah)\s*:?$/i.test(String(s || '').trim());
+}
+
+function sheet_(ss, nama) {
+  const sh = ss.getSheetByName(nama);
+  if (!sh) throw new Error('Sheet "' + nama + '" tidak ditemukan');
+  return sh;
+}
+
+function readTable_(ss, nama, headerRow) {
+  const vals = sheet_(ss, nama).getDataRange().getDisplayValues();
+  const h = (headerRow || 1) - 1;
+  if (!vals[h]) throw new Error('Sheet "' + nama + '" kosong atau baris header tidak ada');
+  return { head: vals[h].map(norm_), rows: vals.slice(h + 1) };
+}
+
+function col_(head, nama) {
+  const n = norm_(nama);
+  let i = head.indexOf(n);
+  if (i > -1) return i;
+  i = head.findIndex(function (x) { return x.indexOf(n) === 0; });
+  if (i > -1) return i;
+  return head.findIndex(function (x) { return x.indexOf(n) > -1; });
+}
+
+function need_(idx, nama, sheetName) {
+  if (idx < 0) throw new Error('Kolom "' + nama + '" tidak ditemukan di sheet "' + sheetName + '"');
+  return idx;
+}
+
+const BLN_MAP_ = { jan:1, feb:2, mar:3, apr:4, mei:5, may:5, jun:6, jul:7, agu:8, agt:8, aug:8, sep:9, sept:9,
+  okt:10, oct:10, nov:11, des:12, dec:12, januari:1, februari:2, maret:3, april:4, juni:6, juli:7,
+  agustus:8, september:9, oktober:10, november:11, desember:12 };
+
+/** "16-Des-24", "30 Juni 2025", "16/12/2024" -> {d, m, y}. Gagal -> null. */
+function parseTgl_(s) {
+  s = String(s || '').trim();
+  let m = s.match(/^(\d{1,2})[-\s]([A-Za-z]+)[-\s](\d{2,4})/);
+  if (m) {
+    const b = BLN_MAP_[m[2].toLowerCase()];
+    if (b) { let y = +m[3]; if (y < 100) y += 2000; return { d: +m[1], m: b, y: y }; }
+  }
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return { d: +m[1], m: +m[2], y: +m[3] };
+  return null;
+}
+
+const BLN_PENDEK_ = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+
+/** "23/05/2026" / "6-Agu-26" -> "23-Mei-26". Kalau bukan tanggal, dikembalikan apa adanya. */
+function rapikanTgl_(s) {
+  const t = parseTgl_(s);
+  if (!t) return String(s === null || s === undefined ? '' : s).trim();
+  return t.d + '-' + BLN_PENDEK_[t.m - 1] + '-' + String(t.y).slice(-2);
+}
+
+/* ======================================================================
+ *                              TAHUN 2026
+ * ====================================================================== */
+
+function getTglAnggaran_(ss) {
+  const v = sheet_(ss, SH.ANG_DASH).getRange(1, 1, 8, 6).getDisplayValues();
+  for (let i = 0; i < v.length; i++) {
+    for (let j = 0; j < v[i].length; j++) {
+      const s = String(v[i][j]);
+      if (/zfmf01/i.test(s)) {
+        const m = s.match(/tanggal\s*:?\s*(.+)$/i);
+        return m ? m[1].trim() : s.trim();
+      }
+    }
+  }
+  return null;
+}
+
+function getAnggaran_(ss) {
+  const t = readTable_(ss, SH.ANGGARAN, 1);
+  const h = t.head, S = SH.ANGGARAN;
+  const iNo = col_(h, 'no'), iFC = col_(h, 'funds center');
+  const iCI = need_(col_(h, 'cost item'), 'Cost Item (CI)', S);
+  const iRkap = need_(col_(h, 'rkap'), 'RKAP', S);
+  const iRel = need_(col_(h, 'release budget'), 'Release Budget', S);
+  const iCom = col_(h, 'commitment'), iAct = col_(h, 'actual');
+  const iCon = need_(col_(h, 'consumed budget'), 'Consumed Budget', S);
+  const iAv = col_(h, 'budget available');
+
+  const rows = [];
+  t.rows.forEach(function (r) {
+    const ci = String(r[iCI] || '').trim();
+    if (!ci || /^(total|jumlah|perencanaan)/i.test(ci)) return;
+    if (iNo > -1 && !String(r[iNo] || '').trim()) return;
+    const rel = num_(r[iRel]), con = num_(r[iCon]);
+    rows.push({
+      no: iNo > -1 ? r[iNo] : '',
+      fc: iFC > -1 ? r[iFC] : '',
+      ci: ci,
+      rkap: num_(r[iRkap]),
+      release: rel,
+      commitment: iCom > -1 ? num_(r[iCom]) : 0,
+      actual: iAct > -1 ? num_(r[iAct]) : 0,
+      consumed: con,
+      available: iAv > -1 ? num_(r[iAv]) : rel - con,
+      pct: rel > 0 ? con / rel * 100 : 0
+    });
+  });
+
+  const total = { rkap: 0, release: 0, commitment: 0, actual: 0, consumed: 0, available: 0 };
+  rows.forEach(function (r) { Object.keys(total).forEach(function (k) { total[k] += r[k]; }); });
+  total.pct = total.release > 0 ? total.consumed / total.release * 100 : 0;
+  return { rows: rows, total: total };
+}
+
+/**
+ * Kurva anggaran bulanan (opsional, tidak memunculkan error bila sheet belum ada).
+ * Sheet "KURVA ANGGARAN": kolom Periode | Rencana Kumulatif | Konsumsi Kumulatif, nilai Rupiah kumulatif.
+ * Hasil: [{periode, rencana, konsumsi}], konsumsi null untuk bulan yang belum terisi.
+ */
+function getKurvaAnggaran_(ss, namaSheet) {
+  try {
+    const sh = ss.getSheetByName(namaSheet);
+    if (!sh) return null;
+    const v = sh.getDataRange().getDisplayValues();
+    let hr = -1;
+    for (let i = 0; i < Math.min(v.length, 10) && hr < 0; i++) {
+      if (v[i].some(function (c) { return norm_(c) === 'periode'; })) hr = i;
+    }
+    if (hr < 0) return null;
+    const h = v[hr].map(norm_);
+    const iP = h.indexOf('periode');
+    const iR = h.findIndex(function (x) { return x.indexOf('rencana') === 0; });
+    const iK = h.findIndex(function (x) { return x.indexOf('konsumsi') === 0 || x.indexOf('consumed') === 0 || x.indexOf('realisasi') === 0; });
+    if (iR < 0 || iK < 0) return null;
+    const out = [];
+    for (let i = hr + 1; i < v.length; i++) {
+      const p = String(v[i][iP] || '').trim();
+      if (!p || /^(total|jumlah)/i.test(p)) continue;
+      const r = String(v[i][iR]).trim(), k = String(v[i][iK]).trim();
+      out.push({ periode: p, rencana: r === '' ? null : num_(r), konsumsi: k === '' ? null : num_(k) });
+    }
+    return out.length ? out : null;
+  } catch (e) { return null; }
+}
+
+function getPengadaan_(ss) {
+  const t = readTable_(ss, SH.PENGADAAN, 1);
+  const h = t.head, S = SH.PENGADAAN;
+  const iNo = col_(h, 'no dok');
+  const iDesk = need_(col_(h, 'deskripsi pekerjaan'), 'Deskripsi Pekerjaan', S);
+  const iCI = col_(h, 'deskripsi ci');
+  const iTipe = col_(h, 'tipe pengadaan');
+  const iVen = col_(h, 'vendor');
+  const iSpk = col_(h, 'nilai spk');
+  const iTgl = col_(h, 'tgl spk');
+  const iPos = col_(h, 'posisi berkas');
+  const iSt = col_(h, 'status');
+  const iKat = col_(h, 'kategori');
+  const iBln = col_(h, 'bulan kontrak');
+  const tahunSS = (ss.getId() === SS_ID_2027) ? 2027 : 2026;
+
+  const get = function (r, i) { return i > -1 ? String(r[i] || '').trim() : ''; };
+  const rows = [];
+  const hit = { 'Selesai': 0, 'Dalam Proses': 0, 'Gagal/Batal': 0 };
+  const perBulanJml = new Array(12).fill(0);
+  const perBulanNilai = new Array(12).fill(0);
+  let totalSpk = 0;
+
+  t.rows.forEach(function (r) {
+    if (!get(r, iDesk)) return;
+    if (barisTotal_(get(r, iDesk))) return;
+    const kat = katPbj_(get(r, iKat) || get(r, iSt));
+    hit[kat]++;
+
+    let spk = iSpk > -1 ? num_(r[iSpk]) : 0;
+    if (!NILAI_BATAL_DIHITUNG && kat === 'Gagal/Batal') spk = 0;
+    totalSpk += spk;
+
+    // Bulan: pakai kolom "Bulan Kontrak"; kalau kosong, ambil dari tanggal SPK
+    let bln = iBln > -1 ? Math.round(num_(r[iBln])) : 0;
+    if (!(bln >= 1 && bln <= 12)) {
+      const tg = parseTgl_(get(r, iTgl));
+      bln = (tg && tg.y === tahunSS) ? tg.m : 0;
+    }
+    if (bln >= 1 && bln <= 12) {
+      perBulanJml[bln - 1]++;
+      perBulanNilai[bln - 1] += spk;
+    }
+    rows.push([
+      get(r, iNo), get(r, iDesk), get(r, iCI), get(r, iTipe), rapiVendor_(get(r, iVen)),
+      spk, get(r, iTgl), get(r, iPos), get(r, iSt), kat, bln
+    ]);
+  });
+
+  const total = rows.length;
+  return {
+    total: total,
+    selesai: hit['Selesai'],
+    proses: hit['Dalam Proses'],
+    gagal: hit['Gagal/Batal'],
+    pctSelesai: total > 0 ? hit['Selesai'] / total * 100 : 0,
+    totalSpk: totalSpk,
+    perBulanJml: perBulanJml,
+    perBulanNilai: perBulanNilai,
+    rows: rows
+  };
+}
+
+/** Dipakai 2026 dan 2025: namaSum = sheet ringkasan (Program | Total Unit), namaDetail = sheet detail unit. */
+function getProgram_(ss, namaSum, namaDetail) {
+  const v = sheet_(ss, namaSum).getDataRange().getDisplayValues();
+  let hr = -1, hc = -1;
+  for (let i = 0; i < v.length && hr < 0; i++) {
+    for (let j = 0; j < v[i].length - 1; j++) {
+      if (norm_(v[i][j]) === 'program' && norm_(v[i][j + 1]) === 'total unit') { hr = i; hc = j; break; }
+    }
+  }
+  if (hr < 0) throw new Error('Tabel "Program | Total Unit" tidak ditemukan di sheet ' + namaSum);
+  const head = v[hr].slice(hc).map(norm_);
+  const ix = function (n) { return col_(head, n); };
+  const iT = ix('total unit'), iR = ix('realisasi'), iTs = ix('tsgo'), iB = ix('belum masuk'),
+        iK = ix('konservasi'), iL = ix('lainnya');
+  const ringkas = [];
+  for (let i = hr + 1; i < v.length; i++) {
+    const p = String(v[i][hc] || '').trim();
+    if (!p || !/^[A-Za-z]/.test(p)) break;
+    const total = iT > -1 ? num_(v[i][hc + iT]) : 0;
+    const real = iR > -1 ? num_(v[i][hc + iR]) : 0;
+    ringkas.push({
+      program: p,
+      total: total,
+      realisasi: real,
+      tsgo: iTs > -1 ? num_(v[i][hc + iTs]) : 0,
+      belumMasuk: iB > -1 ? num_(v[i][hc + iB]) : 0,
+      konservasi: iK > -1 ? num_(v[i][hc + iK]) : 0,
+      lainnya: iL > -1 ? num_(v[i][hc + iL]) : 0,
+      pct: total > 0 ? real / total * 100 : 0
+    });
+  }
+
+  const bulan = {}, detail = {};
+  let detailHead = [];
+  try {
+    const vals = sheet_(ss, namaDetail).getDataRange().getDisplayValues();
+    const headAsli = vals[0];
+    const headN = headAsli.map(norm_);
+    const rows = vals.slice(1);
+    const iP = col_(headN, 'program'), iKat = col_(headN, 'kategori status');
+    const iRen = col_(headN, 'no bln rencana'), iPro = col_(headN, 'no bln produksi');
+
+    let tampil = KOLOM_TAMPIL.map(function (n) { return col_(headN, n); })
+                             .filter(function (i) { return i > -1; });
+    if (!tampil.length) {
+      for (let i = 0; i < headN.length && tampil.length < 8; i++) if (headN[i]) tampil.push(i);
+    }
+    detailHead = tampil.map(function (i) { return headAsli[i]; });
+
+    // Kolom tanggal (header diawali "Tgl") diseragamkan formatnya: 23-Mei-26
+    const kolTgl = tampil.filter(function (i) { return /^tgl/.test(headN[i]); });
+
+    if (iP > -1 && iKat > -1 && iRen > -1 && iPro > -1) {
+      rows.forEach(function (r) {
+        const p = String(r[iP] || '').trim();
+        if (!p) return;
+        if (!bulan[p]) {
+          bulan[p] = { rencana: new Array(12).fill(0), realisasi: new Array(12).fill(0) };
+          detail[p] = [];
+        }
+        const mr = Math.round(num_(r[iRen])), mp = Math.round(num_(r[iPro]));
+        const real = norm_(r[iKat]) === 'realisasi';
+        if (mr >= 1 && mr <= 12) bulan[p].rencana[mr - 1]++;
+        if (real && mp >= 1 && mp <= 12) bulan[p].realisasi[mp - 1]++;
+        detail[p].push({
+          c: tampil.map(function (i) { return kolTgl.indexOf(i) > -1 ? rapikanTgl_(r[i]) : r[i]; }),
+          mr: mr, mp: mp, real: real
+        });
+      });
+    }
+  } catch (e) { /* grafik bulanan opsional */ }
+
+  // Hitung ulang ringkasan dari baris detail supaya sinkron dengan tabel unit
+  if (Object.keys(detail).length) {
+    const hit = {};
+    Object.keys(detail).forEach(function (p) {
+      const c = { total: 0, realisasi: 0, tsgo: 0, belumMasuk: 0, konservasi: 0, lainnya: 0 };
+      detail[p].forEach(function (r) {
+        c.total++;
+        const t = r.c.join(' ').toLowerCase();
+        if (r.real) c.realisasi++;
+        else if (/tsgo/.test(t)) c.tsgo++;
+        else if (/konservasi|geser/.test(t)) c.konservasi++;
+        else if (/belum/.test(t)) c.belumMasuk++;
+        else c.lainnya++;
+      });
+      hit[norm_(p)] = c;
+    });
+    const jml = { total: 0, realisasi: 0, tsgo: 0, belumMasuk: 0, konservasi: 0, lainnya: 0 };
+    let baris = null;
+    ringkas.forEach(function (r) {
+      if (norm_(r.program) === 'total') { baris = r; return; }
+      const c = hit[norm_(r.program)];
+      if (!c) return;
+      Object.keys(jml).forEach(function (k) { r[k] = c[k]; jml[k] += c[k]; });
+      r.pct = r.total > 0 ? r.realisasi / r.total * 100 : 0;
+    });
+    if (baris) {
+      Object.keys(jml).forEach(function (k) { baris[k] = jml[k]; });
+      baris.pct = baris.total > 0 ? baris.realisasi / baris.total * 100 : 0;
+    }
+  }
+  return { ringkas: ringkas, bulan: bulan, detail: detail, detailHead: detailHead };
+}
+
+function getNusantara_(ss) {
+  const v = sheet_(ss, SH.NUS_SUM).getDataRange().getDisplayValues();
+  const cari = function (awalan) {
+    for (let i = 0; i < v.length; i++) {
+      for (let j = 0; j < v[i].length; j++) {
+        if (norm_(v[i][j]).indexOf(awalan) === 0) {
+          for (let k = j + 1; k < v[i].length; k++) {
+            if (String(v[i][k]).trim() !== '') return String(v[i][k]).trim();
+          }
+        }
+      }
+    }
+    return '';
+  };
+  const kpi = {
+    aktual: cari('rata-rata aktual'),
+    rencana: cari('rata-rata program'),
+    deviasi: cari('deviasi'),
+    selesai: cari('kereta selesai')
+  };
+  kpi.aktualNum = num_(kpi.aktual);
+  kpi.rencanaNum = num_(kpi.rencana);
+  kpi.deviasiNum = num_(kpi.deviasi);
+  kpi.selesaiNum = num_(kpi.selesai);
+
+  const t = readTable_(ss, SH.NUS, 1), h = t.head;
+  const iK = need_(col_(h, 'kereta'), 'Kereta / Pekerjaan', SH.NUS);
+  const iG = col_(h, 'kelompok'), iPos = col_(h, 'posisi data'), iRen = col_(h, 'rencana kumulatif'),
+        iAk = col_(h, 'aktual kumulatif'), iDev = col_(h, 'deviasi'), iSisa = col_(h, 'sisa'), iSt = col_(h, 'status');
+  const items = [];
+  t.rows.forEach(function (r) {
+    const k = String(r[iK] || '').trim();
+    if (!k) return;
+    items.push({
+      kereta: k,
+      kelompok: iG > -1 ? r[iG] : '',
+      posisi: iPos > -1 ? r[iPos] : '',
+      rencana: iRen > -1 ? num_(r[iRen]) : 0,
+      aktual: iAk > -1 ? num_(r[iAk]) : 0,
+      deviasi: iDev > -1 ? num_(r[iDev]) : 0,
+      sisa: iSisa > -1 ? num_(r[iSisa]) : 0,
+      status: iSt > -1 ? r[iSt] : ''
+    });
+  });
+
+  // Hitung "Kereta selesai 100%" langsung dari tabel (bukan dari sel sheet ringkasan)
+  const nSelesai = items.filter(function (x) {
+    return norm_(x.status) === 'selesai' || x.aktual >= 99.995;
+  }).length;
+  kpi.selesai = String(nSelesai);
+  kpi.selesaiNum = nSelesai;
+
+  const kurva = [];
+  try {
+    const kv = sheet_(ss, SH.KURVA).getDataRange().getDisplayValues();
+    const head = kv[1].map(norm_);
+    const iP = head.indexOf('periode');
+    const iR = head.findIndex(function (x) { return x.indexOf('rata-rata rencana') === 0; });
+    const iA = head.findIndex(function (x) { return x.indexOf('rata-rata aktual') === 0; });
+    if (iP > -1 && iR > -1 && iA > -1) {
+      for (let i = 2; i < kv.length; i++) {
+        const p = String(kv[i][iP] || '').trim();
+        if (!p) continue;
+        kurva.push({
+          periode: p,
+          rencana: String(kv[i][iR]).trim() === '' ? null : num_(kv[i][iR]),
+          aktual: String(kv[i][iA]).trim() === '' ? null : num_(kv[i][iA])
+        });
+      }
+    }
+  } catch (e) { /* kurva S opsional */ }
+
+  return { kpi: kpi, items: items, kurva: kurva };
+}
+
+function getSukuCadang_(ss) {
+  const t = readTable_(ss, SH.SPARE, 1), h = t.head, S = SH.SPARE;
+  const iM = col_(h, 'matnum'), iSum = col_(h, 'sumber');
+  const iJ = need_(col_(h, 'judul pengadaan'), 'Judul Pengadaan', S);
+  const iD = col_(h, 'deskripsi material'), iSat = col_(h, 'satuan'), iQ = col_(h, 'qty');
+  const iH = col_(h, 'harga satuan'), iTot = need_(col_(h, 'jumlah harga'), 'Jumlah Harga', S);
+  const iV = col_(h, 'vendor');
+
+  const daftar = [];
+  if (iV < 0) {
+    try {
+      const p = readTable_(ss, SH.PENGADAAN, 1);
+      const pD = col_(p.head, 'deskripsi pekerjaan'), pV = col_(p.head, 'vendor');
+      if (pD > -1 && pV > -1) {
+        p.rows.forEach(function (r) {
+          const d = norm_(r[pD]), v = String(r[pV] || '').trim();
+          if (d && v) daftar.push([d, v]);
+        });
+      }
+    } catch (e) { /* vendor opsional */ }
+  }
+  const cariVendor = buatCariVendor_(daftar);
+
+  const rows = [], perSumber = {};
+  let total = 0;
+  t.rows.forEach(function (r) {
+    if (!String(r[iJ] || '').trim() && !String(iM > -1 ? r[iM] : '').trim()) return;
+    const jml = num_(r[iTot]);
+    total += jml;
+    const s = iSum > -1 ? (String(r[iSum]).trim() || 'Lainnya') : 'Lainnya';
+    if (!perSumber[s]) perSumber[s] = { baris: 0, nilai: 0 };
+    perSumber[s].baris++;
+    perSumber[s].nilai += jml;
+    const vendor = (iV > -1 ? String(r[iV] || '').trim() : cariVendor(r[iJ])) || '(belum ada vendor)';
+    rows.push([
+      iM > -1 ? r[iM] : '', r[iJ], vendor, iD > -1 ? r[iD] : '', iSat > -1 ? r[iSat] : '',
+      iQ > -1 ? num_(r[iQ]) : 0, iH > -1 ? num_(r[iH]) : 0
+    ]);
+  });
+  return { total: total, jumlahBaris: rows.length, perSumber: perSumber, rows: rows };
+}
+
+/** Pencari vendor berdasarkan judul pengadaan (dipakai 2026 dan 2025). */
+function buatCariVendor_(daftar) {
+  const memo = {};
+  return function (judul) {
+    const j = norm_(judul);
+    if (!j) return '';
+    if (memo[j] !== undefined) return memo[j];
+    let hasil = '';
+    for (let i = 0; i < daftar.length && !hasil; i++) if (daftar[i][0] === j) hasil = daftar[i][1];
+    if (!hasil && j.length >= 20) {
+      for (let i = 0; i < daftar.length && !hasil; i++) {
+        if (daftar[i][0].indexOf(j) > -1 || j.indexOf(daftar[i][0]) > -1) hasil = daftar[i][1];
+      }
+    }
+    memo[j] = hasil;
+    return hasil;
+  };
+}
+
+
+/* ======================================================================
+ *                              TAHUN 2027
+ *  Menggunakan struktur sheet dan kolom yang sama dengan tahun 2026.
+ * ====================================================================== */
+
+function getDashboardData2027_() {
+  const ss = SpreadsheetApp.openById(SS_ID_2027);
+  const errors = [];
+  const safe = function (nama, fn) {
+    try { return fn(ss); }
+    catch (e) { errors.push(nama + ': ' + e.message); return null; }
+  };
+  return {
+    tahun: 2027,
+    hariIni: tglUpdate_(SS_ID_2027),
+    pakaiSandi: pakaiSandi_(),
+    urlUtama: urlSS_(SS_ID_2027),
+    sumber: safe('Sumber data', getSumber27_),
+    tglAnggaran: safe('Tanggal anggaran', getTglAnggaran_),
+    anggaran: safe('Anggaran', getAnggaran_),
+    kurvaAnggaran: getKurvaAnggaran_(ss, SH.KURVA_ANG),
+    pengadaan: safe('Pengadaan', getPengadaan_),
+    program: safe('Program', function (s) {
+      return getProgram_(s, SH.PROGRAM_SUM, SH.PROGRAM);
+    }),
+    nusantara: safe('Nusantara', getNusantara_),
+    sukuCadang: safe('Suku Cadang', getSukuCadang_),
+    errors: errors
+  };
+}
+
+/* ======================================================================
+ *                              TAHUN 2025
+ * ====================================================================== */
+
+function getDashboardData2025_() {
+  const ss = SpreadsheetApp.openById(SS_ID_2025);
+  const errors = [];
+  const safe = function (nama, fn) {
+    try { return fn(ss); } catch (e) { errors.push(nama + ': ' + e.message); return null; }
+  };
+  const now = new Date();
+  const pbj = safe('Pengadaan', getPengadaan25_);
+  const ang = safe('Anggaran', getAnggaran25_);
+  return {
+    tahun: 2025,
+    hariIni: now.getDate() + ' ' + BULAN_ID[now.getMonth()] + ' ' + now.getFullYear(),
+    pakaiSandi: pakaiSandi_(),
+    urlUtama: urlSS_(SS_ID_2025),
+    sumber: safe('Sumber data', getSumber25_),
+    tglAnggaran: ang ? ang.tgl : null,
+    anggaran: ang,
+    kurvaAnggaran: getKurvaAnggaran_(ss, SH25.KURVA_ANG),
+    pengadaan: pbj,
+    program: safe('Program', function (s) { return getProgram_(s, SH25.PROGRAM_SUM, SH25.PROGRAM); }),
+    nusantara: null,
+    sukuCadang: safe('Suku Cadang', function (s) { return getSukuCadang25_(s, pbj); }),
+    penugasan: safe('Penugasan', getPenugasan25_),
+    errors: errors
+  };
+}
+
+function getAnggaran25_(ss) {
+  const S = SH25.RKAD, t = readTable_(ss, S, 1), h = t.head;
+  const iCI = need_(col_(h, 'funds center/commitment item'), 'Funds Center/Commitment Item', S);
+  const iDes = col_(h, 'deskripsi ci');
+  const iRkap = need_(col_(h, 'rkap'), 'RKAP', S);
+  const iRel = need_(col_(h, 'release budget'), 'Release Budget', S);
+  const iCom = col_(h, 'comitment'), iAct = col_(h, 'actual');
+  const iCon = need_(col_(h, 'consumed budget'), 'Consumed Budget', S);
+  const iAv = col_(h, 'budget available'), iTgl = col_(h, 'tgl. update');
+
+  const rows = []; let tgl = null, no = 0;
+  t.rows.forEach(function (r) {
+    const ci = String(r[iCI] || '').trim();
+    if (!ci || /^(total|jumlah)/i.test(ci)) return;
+    const rel = num_(r[iRel]), con = num_(r[iCon]);
+    if (!tgl && iTgl > -1 && String(r[iTgl]).trim()) tgl = String(r[iTgl]).trim();
+    rows.push({
+      no: ++no, fc: iDes > -1 ? r[iDes] : '', ci: ci,
+      rkap: num_(r[iRkap]), release: rel,
+      commitment: iCom > -1 ? num_(r[iCom]) : 0,
+      actual: iAct > -1 ? num_(r[iAct]) : 0,
+      consumed: con,
+      available: iAv > -1 ? num_(r[iAv]) : rel - con,
+      pct: rel > 0 ? con / rel * 100 : 0
+    });
+  });
+  const total = { rkap: 0, release: 0, commitment: 0, actual: 0, consumed: 0, available: 0 };
+  rows.forEach(function (r) { Object.keys(total).forEach(function (k) { total[k] += r[k]; }); });
+  total.pct = total.release > 0 ? total.consumed / total.release * 100 : 0;
+  return { rows: rows, total: total, tgl: tgl };
+}
+
+function getPengadaan25_(ss) {
+  const S = SH25.PENGADAAN, t = readTable_(ss, S, 1), h = t.head;
+  const iNo = col_(h, 'no dokumen');
+  const iDesk = need_(col_(h, 'deskripsi'), 'DESKRIPSI', S);
+  const iCI = col_(h, 'deskripsi ci'), iTipe = col_(h, 'tipe pengadaan'), iVen = col_(h, 'vendor');
+  const iSpk = need_(col_(h, 'netto / bruto spk,kontrak, umds'), 'NETTO / BRUTO SPK,KONTRAK, UMDS', S);
+  const iTgl = col_(h, 'tgl spk/kontrak'), iPos = col_(h, 'posisi berkas'), iSt = col_(h, 'status');
+
+  const get = function (r, i) { return i > -1 ? String(r[i] || '').trim() : ''; };
+  const rows = [], hit = { 'Selesai': 0, 'Dalam Proses': 0, 'Gagal/Batal': 0 };
+  const perBulanJml = new Array(12).fill(0), perBulanNilai = new Array(12).fill(0);
+  let totalSpk = 0;
+
+  t.rows.forEach(function (r) {
+    if (!get(r, iDesk)) return;
+    if (barisTotal_(get(r, iDesk))) return;
+    const kat = katPbj_(get(r, iSt));
+    hit[kat]++;
+
+    let spk = num_(r[iSpk]);
+    if (!NILAI_BATAL_DIHITUNG && kat === 'Gagal/Batal') spk = 0;
+    totalSpk += spk;
+    const tg = parseTgl_(get(r, iTgl));
+    const bln = (tg && tg.y === 2025) ? tg.m : 0;
+    if (bln >= 1 && bln <= 12) { perBulanJml[bln - 1]++; perBulanNilai[bln - 1] += spk; }
+    rows.push([get(r, iNo), get(r, iDesk), get(r, iCI), get(r, iTipe), rapiVendor_(get(r, iVen)),
+               spk, get(r, iTgl), get(r, iPos), get(r, iSt), kat, bln]);
+  });
+  const total = rows.length;
+  return { total: total, selesai: hit['Selesai'], proses: hit['Dalam Proses'], gagal: hit['Gagal/Batal'],
+    pctSelesai: total > 0 ? hit['Selesai'] / total * 100 : 0, totalSpk: totalSpk,
+    perBulanJml: perBulanJml, perBulanNilai: perBulanNilai, rows: rows };
+}
+
+function getSukuCadang25_(ss, pbj) {
+  const daftar = [];
+  if (pbj && pbj.rows) pbj.rows.forEach(function (r) {
+    const d = norm_(r[1]), v = String(r[4] || '').trim();
+    if (d && v) daftar.push([d, v]);
+  });
+  const cariVendor = buatCariVendor_(daftar);
+
+  const rows = [], perSumber = {};
+  let total = 0;
+  const baca = function (nama, sumber, k) {
+    const t = readTable_(ss, nama, 1), h = t.head;
+    const iJ = need_(col_(h, k.judul), k.judul, nama);
+    const iM = col_(h, 'matnum'), iD = col_(h, k.desk), iSat = col_(h, 'satuan');
+    const iQ = col_(h, k.qty), iH = col_(h, k.harga);
+    t.rows.forEach(function (r) {
+      const judul = String(r[iJ] || '').trim(), mat = iM > -1 ? String(r[iM] || '').trim() : '';
+      if (!judul && !mat) return;
+      const qty = iQ > -1 ? num_(r[iQ]) : 0, harga = iH > -1 ? num_(r[iH]) : 0, jml = qty * harga;
+      total += jml;
+      if (!perSumber[sumber]) perSumber[sumber] = { baris: 0, nilai: 0 };
+      perSumber[sumber].baris++; perSumber[sumber].nilai += jml;
+      rows.push([mat, judul, cariVendor(judul) || '(belum ada vendor)',
+                 iD > -1 ? r[iD] : '', iSat > -1 ? r[iSat] : '', qty, harga]);
+    });
+  };
+  baca(SH25.SUKCAD_KONTRAK, 'Sukcad Kontrak / Persediaan',
+       { judul: 'judul pengadaan', desk: 'deskripsi', qty: 'qty', harga: 'harga satuan rab' });
+  baca(SH25.SUKCAD_UMDS, 'Sukcad UMDS',
+       { judul: 'pengadaan', desk: 'deskripsi barang', qty: 'vol', harga: 'harga sukcad' });
+  return { total: total, jumlahBaris: rows.length, perSumber: perSumber, rows: rows };
+}
+
+function getPenugasan25_(ss) {
+  const S = SH25.PENUGASAN, t = readTable_(ss, S, 1), h = t.head;
+  const iNo = col_(h, 'no'), iNama = need_(col_(h, 'nama pengadaan'), 'NAMA PENGADAAN', S);
+  const iRab = col_(h, 'nilai rab'), iHps = col_(h, 'nilai hps'), iNil = col_(h, 'nilai perjanjian');
+  const iMitra = col_(h, 'mitra'), iTgl = col_(h, 'tgl kontrak'), iNoK = col_(h, 'no. kontrak');
+  const iMppl = col_(h, 'mppl'), iKet = col_(h, 'keterangan');
+  const iTipe = col_(h, 'tipe pengadaan'), iProg = col_(h, 'progres');
+  const mulai = [iTipe, iProg].filter(function (i) { return i > -1; });
+  const dari = mulai.length ? Math.min.apply(null, mulai) : 0;
+  const get = function (r, i) { return i > -1 ? String(r[i] || '').trim() : ''; };
+
+  const rows = [], perStatus = {}, perTipe = {};
+  let nilaiRab = 0, nilaiPerjanjian = 0, batal = 0;
+  t.rows.forEach(function (r) {
+    if (!get(r, iNama)) return;
+    const ekor = r.slice(dari).join(' ');
+    const isBatal = /batal|gagal/i.test(ekor);
+    const status = isBatal ? 'BATAL' : (get(r, iProg) || '-');
+    let tipe = get(r, iTipe);
+    if (/batal/i.test(tipe)) tipe = '';
+    tipe = tipe || '(belum diisi)';
+    const rab = num_(r[iRab]), hps = num_(r[iHps]), nil = num_(r[iNil]);
+    nilaiRab += rab; nilaiPerjanjian += nil; if (isBatal) batal++;
+    perStatus[status] = (perStatus[status] || 0) + 1;
+    perTipe[tipe] = (perTipe[tipe] || 0) + 1;
+    rows.push([get(r, iNo), get(r, iNama), tipe, get(r, iMitra), rab, hps, nil,
+               get(r, iTgl), get(r, iNoK), get(r, iMppl), status, get(r, iKet)]);
+  });
+  return { total: rows.length, nilaiRab: nilaiRab, nilaiPerjanjian: nilaiPerjanjian,
+           batal: batal, perStatus: perStatus, perTipe: perTipe, rows: rows };
+}
+
+/* ============ CACHE DATA DASHBOARD (agar buka lebih ringan) ============ */
+var CACHE_DETIK_ = 1800;      // 30 menit
+var CACHE_POTONG_ = 90000;    // karakter per potongan (base64 = ASCII, aman di bawah batas 100 KB)
+// Naikkan angka versi ini (v6, v7, ...) setiap kali struktur data diubah, supaya cache lama tidak terpakai.
+var CACHE_VERSI_ = 'dash_v6_';
+
+/** Data digzip lalu dipotong. Teks dengan huruf non-ASCII tidak lagi melewati batas 100 KB. */
+function cacheGetBesar_(key) {
+  try {
+    var c = CacheService.getScriptCache();
+    var meta = c.get(key + '_n');
+    if (!meta) return null;
+    var n = parseInt(meta, 10), keys = [];
+    for (var i = 0; i < n; i++) keys.push(key + '_' + i);
+    var got = c.getAll(keys), b64 = '';
+    for (var j = 0; j < n; j++) {
+      if (got[keys[j]] == null) return null;
+      b64 += got[keys[j]];
+    }
+    var blob = Utilities.newBlob(Utilities.base64Decode(b64), 'application/x-gzip', 'd.gz');
+    return JSON.parse(Utilities.ungzip(blob).getDataAsString());
+  } catch (e) { return null; }
+}
+
+function cachePutBesar_(key, obj) {
+  try {
+    var c = CacheService.getScriptCache();
+    var gz = Utilities.gzip(Utilities.newBlob(JSON.stringify(obj), 'application/octet-stream', 'd'));
+    var b64 = Utilities.base64Encode(gz.getBytes());
+    var n = Math.ceil(b64.length / CACHE_POTONG_), batch = {};
+    if (n > 90) return; // terlalu besar: jalan tanpa cache
+    for (var i = 0; i < n; i++) batch[key + '_' + i] = b64.substr(i * CACHE_POTONG_, CACHE_POTONG_);
+    batch[key + '_n'] = String(n);
+    c.putAll(batch, CACHE_DETIK_);
+  } catch (e) { /* abaikan, tetap jalan tanpa cache */ }
+}
+
+/** Admin dapat memaksa refresh; User hanya membaca cache/data yang tersedia. */
+function getDashboardData(token, tahun, paksa) {
+  const role = peran_(token);
+  if (!role) throw new Error('SESI_HABIS');
+  const th = ['2025', '2026', '2027'].indexOf(String(tahun)) > -1 ? String(tahun) : '2026';
+  const key = CACHE_VERSI_ + th;
+  let hasil = null;
+  if (!(paksa === true && role === 'admin')) hasil = cacheGetBesar_(key);
+  if (!hasil) {
+    hasil = getDashboardDataAsli_(token, th);
+    cachePutBesar_(key, hasil);
+  }
+  return untukPeran_(hasil, role);
+}
+
+
+/* ======================================================================
+ * DATA APAR (digabung dari Apar.gs)
+ * Dipanggil dari Index.html melalui google.script.run.getAparData(...)
+ * ====================================================================== */
+
+const APAR_NAMA_SHEET = 'PENGECEKAN APAR';
+const APAR_BATAS_HARI = 90;
+
+function getAparData(token, tahun) {
+  const role = peran_(token);
+  if (!role) throw new Error('SESI_HABIS');
+  const th = String(tahun || '2026');
+  if (th === '2025') throw new Error('Data APAR tidak tersedia untuk tahun 2025.');
+  const id = th === '2027' ? SS_ID_2027 : SS_ID;
+  const ss = SpreadsheetApp.openById(id);
+  const hasil = aparBaca_(ss);
+  const sh = ss.getSheetByName(APAR_NAMA_SHEET);
+  // Tautan sheet APAR hanya diberikan kepada Admin.
+  hasil.urlSheet = (sh && role === 'admin')
+    ? urlSS_(id) + '?gid=' + sh.getSheetId() + '#gid=' + sh.getSheetId()
+    : '';
+  return hasil;
+}
+
+/** "Jun-26", "Dec-2028", "30 Juni 2026", "30/06/2026" -> Date. */
+function aparParseTgl_(s) {
+  s = String(s || '').trim();
+  if (!s) return null;
+  const m = s.match(/^([A-Za-z]+)[-\s\/.](\d{2,4})$/);
+  if (m) {
+    const b = BLN_MAP_[m[1].toLowerCase()];
+    if (b) {
+      let y = +m[2];
+      if (y < 100) y += 2000;
+      return new Date(y, b, 0);
+    }
+  }
+  const t = parseTgl_(s);
+  return t ? new Date(t.y, t.m - 1, t.d) : null;
+}
+
+function aparBaca_(ss) {
+  const S = APAR_NAMA_SHEET;
+  const vals = sheet_(ss, S).getDataRange().getDisplayValues();
+
+  // Header utama "NO. APAR"; subheader pemeriksaan berada di baris berikutnya.
+  let hr = -1;
+  for (let i = 0; i < Math.min(vals.length, 15) && hr < 0; i++) {
+    if (vals[i].some(function (c) { return norm_(c) === 'no. apar'; })) hr = i;
+  }
+  if (hr < 0) throw new Error('Header "NO. APAR" tidak ditemukan di sheet "' + S + '"');
+  const h1 = vals[hr].map(norm_);
+  const h2 = (vals[hr + 1] || []).map(norm_);
+  const sub = h2.some(function (x) { return x === 'pressure'; });
+  const head = h1.map(function (x, j) { return (sub && h2[j]) || x; });
+
+  const iNo = need_(col_(head, 'no. apar'), 'NO. APAR', S);
+  const iLok = need_(col_(head, 'lokasi'), 'LOKASI', S);
+  const iKad = need_(col_(head, 'kadaluarsa'), 'KADALUARSA', S);
+  const iJen = col_(head, 'jenis');
+  const iKap = col_(head, 'kapasitas');
+  const iCek = col_(head, 'tanggal terakhir pengecekan');
+  const iPre = col_(head, 'pressure');
+  const iSeg = col_(head, 'segel');
+  const iSel = col_(head, 'selang');
+  const iTab = col_(head, 'kondisi tabung');
+  const iTem = col_(head, 'tempat');
+  const iBar = col_(head, 'barcode');
+  const iNext = col_(head, 'kadaluarsa berikutnya');
+
+  const get = function (r, i) { return i > -1 ? String(r[i] || '').trim() : ''; };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const perStatus = { 'Aman': 0, 'Segera kadaluarsa': 0, 'Kadaluarsa': 0, 'Tidak ada data': 0 };
+  const bulanMap = {};
+  const rows = [];
+  let tanpaLokasi = 0, sudahCek = 0, sudahGanti = 0;
+
+  vals.slice(hr + (sub ? 2 : 1)).forEach(function (r) {
+    const no = get(r, iNo), lok = get(r, iLok);
+    if (!no && !lok) return;
+    const kad = get(r, iKad), nxt = get(r, iNext), cek = get(r, iCek), bar = get(r, iBar);
+
+    // APAR yang sudah diganti memakai "kadaluarsa berikutnya".
+    const tgl = aparParseTgl_(nxt || kad);
+    let status = 'Tidak ada data', sisa = '';
+    if (tgl) {
+      sisa = Math.round((tgl.getTime() - today.getTime()) / 86400000);
+      status = sisa < 0 ? 'Kadaluarsa' : (sisa <= APAR_BATAS_HARI ? 'Segera kadaluarsa' : 'Aman');
+      const key = tgl.getFullYear() * 100 + tgl.getMonth() + 1;
+      if (!bulanMap[key]) {
+        bulanMap[key] = {
+          key: key,
+          label: BULAN_ID[tgl.getMonth()].slice(0, 3) + ' ' + tgl.getFullYear(),
+          n: 0,
+          lewat: tgl < today
+        };
+      }
+      bulanMap[key].n++;
+    }
+    perStatus[status]++;
+    if (!lok) tanpaLokasi++;
+    if (cek) sudahCek++;
+    if (bar || nxt) sudahGanti++;
+
+    rows.push([
+      no, lok, get(r, iJen), get(r, iKap), kad, cek,
+      get(r, iPre), get(r, iSeg), get(r, iSel), get(r, iTab), get(r, iTem),
+      bar, nxt, status, sisa
+    ]);
+  });
+
+  return {
+    total: rows.length,
+    tanpaLokasi: tanpaLokasi,
+    sudahCek: sudahCek,
+    sudahGanti: sudahGanti,
+    batasHari: APAR_BATAS_HARI,
+    acuan: today.getDate() + ' ' + BULAN_ID[today.getMonth()] + ' ' + today.getFullYear(),
+    perStatus: perStatus,
+    perBulan: Object.keys(bulanMap)
+      .map(function (k) { return bulanMap[k]; })
+      .sort(function (a, b) { return a.key - b.key; }),
+    rows: rows
+  };
+}
+
+/* ===== MENU DASHBOARD DI GOOGLE SHEETS (tempel sekali) ===== */
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('📊 Dashboard')
+    .addItem('Buka Dashboard', 'bukaDashboard')
+    .addSeparator()
+    .addItem('🔍 Diagnosa selisih Pengadaan', 'diagnosaPengadaan')
+    .addToUi();
+}
+function bukaDashboard() {
+  const html = HtmlService.createHtmlOutputFromFile('Index')
+    .setTitle('DASHBOARD MONITORING UNIT PERENCANAAN')
+    .setWidth(1600)
+    .setHeight(900);
+  SpreadsheetApp.getUi().showModelessDialog(html, 'Dashboard Monitoring Unit Perencanaan');
+}
+
+/* ======================================================================
+ *  INPUT DATA DARI DASHBOARD (Pengadaan, Program, Suku Cadang, APAR)
+ * ====================================================================== */
+const LOG_INPUT = 'LOG INPUT';
+
+function inputTh_(t) { t = String(t); return ['2025', '2026', '2027'].indexOf(t) > -1 ? t : '2026'; }
+function inputAdmin_(token) {
+  const r = peran_(token);
+  if (!r) throw new Error('SESI_HABIS');
+  if (r !== 'admin') throw new Error('Hanya Admin yang boleh menginput data.');
+}
+function inputSS_(th) { return SpreadsheetApp.openById(th === '2025' ? SS_ID_2025 : (th === '2027' ? SS_ID_2027 : SS_ID)); }
+
+/** Daftar sheet tujuan tiap modul. kunci = kolom wajib; unik = kombinasi kolom yang dicek duplikat. */
+function inputTargets_(modul, th) {
+  const s25 = th === '2025';
+  const T = {
+    pengadaan: s25 ? [{ sheet: SH25.PENGADAAN, kunci: 'deskripsi' }] : [{ sheet: SH.PENGADAAN, kunci: 'deskripsi pekerjaan' }],
+    program: [{ sheet: s25 ? SH25.PROGRAM : SH.PROGRAM, kunci: 'no sarana', unik: ['no sarana', 'program'] }],
+    suku: s25
+      ? [{ sheet: SH25.SUKCAD_KONTRAK, kunci: 'judul pengadaan' }, { sheet: SH25.SUKCAD_UMDS, kunci: 'pengadaan' }]
+      : [{ sheet: SH.SPARE, kunci: 'judul pengadaan' }],
+    apar: s25 ? [] : [{ sheet: APAR_NAMA_SHEET, kunci: 'no. apar', unik: ['no. apar'], sub: true }]
+  };
+  return T[modul] || [];
+}
+
+function inputKepala_(sh, t) {
+  const lastCol = sh.getLastColumn();
+  if (lastCol < 1) throw new Error('Sheet "' + t.sheet + '" kosong');
+  const top = sh.getRange(1, 1, Math.min(15, Math.max(sh.getLastRow(), 2)), lastCol).getDisplayValues();
+  let hr = 0;
+  if (t.sub) {
+    hr = -1;
+    for (let i = 0; i < top.length && hr < 0; i++) {
+      if (top[i].some(function (c) { return norm_(c) === t.kunci; })) hr = i;
+    }
+    if (hr < 0) throw new Error('Header "' + t.kunci + '" tidak ditemukan di sheet "' + t.sheet + '"');
+  }
+  const h1 = top[hr], h2 = t.sub ? (top[hr + 1] || []) : [];
+  const sub = t.sub && h2.some(function (x) { return norm_(x) === 'pressure'; });
+  const label = h1.map(function (x, j) { return String((sub && h2[j]) || x || '').trim(); });
+  return { label: label, norm: label.map(norm_), mulai: hr + (sub ? 2 : 1) + 1, lastCol: lastCol };
+}
+
+function inputSkema_(sh, t) {
+  const k = inputKepala_(sh, t);
+  const lastRow = sh.getLastRow();
+  const n = Math.max(0, Math.min(300, lastRow - k.mulai + 1));
+  let vals = [], frm = [];
+  if (n > 0) {
+    const rg = sh.getRange(lastRow - n + 1, 1, n, k.lastCol);
+    vals = rg.getValues(); frm = rg.getFormulas();
+  }
+  const kcol = col_(k.norm, t.kunci);
+  const fields = [];
+  for (let j = 0; j < k.lastCol; j++) {
+    if (!k.label[j]) continue;
+    const kol = vals.map(function (r) { return r[j]; });
+    const nb = kol.filter(function (v) { return v !== '' && v !== null; });
+    const strs = nb.filter(function (v) { return typeof v === 'string'; });
+    const nF = frm.filter(function (r) { return r[j]; }).length;
+    const formula = n > 0 && nF >= n * 0.5;
+    const dates = nb.filter(function (v) { return v instanceof Date; }).length;
+    const nums = nb.filter(function (v) { return typeof v === 'number'; }).length;
+    let tipe = 'teks', fmt = '', opsi = [];
+    if (nb.length && dates >= nb.length * 0.5) { tipe = 'tgl'; fmt = 'date'; }
+    else if (nb.length && nums >= nb.length * 0.6) { tipe = 'angka'; }
+    else if (strs.length && /tgl|tanggal|kadaluarsa|pengecekan/.test(k.norm[j])) {
+      const full = strs.filter(function (s) { return parseTgl_(s); }).length;
+      const bln = strs.filter(function (s) { return /^[A-Za-z]+[-\s\/.]\d{2,4}$/.test(s.trim()); }).length;
+      if (full >= strs.length * 0.5) { tipe = 'tgl'; fmt = 'text'; }
+      else if (bln >= strs.length * 0.5) { tipe = 'bulan'; fmt = 'text'; }
+    }
+    if (tipe === 'teks' && !formula) {
+      const seen = {}; strs.forEach(function (s) { if (s.trim()) seen[s.trim()] = 1; });
+      const d = Object.keys(seen);
+      if (d.length && d.length <= 40 && strs.length >= d.length * 1.5) opsi = d.sort(function (a, b) { return a.localeCompare(b, 'id'); });
+    }
+    fields.push({ i: j, label: k.label[j], tipe: tipe, fmt: fmt, opsi: opsi, formula: formula, wajib: j === kcol });
+  }
+  // 8 baris terakhir, hanya kolom input pertama (untuk pratinjau)
+  const vis = fields.filter(function (f) { return !f.formula; }).slice(0, 7);
+  let terakhir = [];
+  if (lastRow >= k.mulai) {
+    const r0 = Math.max(k.mulai, lastRow - 7), nr = lastRow - r0 + 1;
+    const d = sh.getRange(r0, 1, nr, k.lastCol).getDisplayValues();
+    terakhir = d.map(function (r) { return vis.map(function (f) { return r[f.i]; }); });
+  }
+  return { fields: fields, pratinjauKepala: vis.map(function (f) { return f.label; }), terakhir: terakhir, mulai: k.mulai, kcol: kcol };
+}
+
+/** Dipanggil dari Index.html. Hanya Admin. */
+function getInputSkema(token, tahun, modul, idx) {
+  inputAdmin_(token);
+  const th = inputTh_(tahun);
+  const tg = inputTargets_(modul, th);
+  if (!tg.length) return { targets: [], pesan: 'Modul ini tidak tersedia untuk tahun ' + th + '.' };
+  const t = tg[Math.min(Math.max(+idx || 0, 0), tg.length - 1)];
+  const sh = sheet_(inputSS_(th), t.sheet);
+  const s = inputSkema_(sh, t);
+  return { targets: tg.map(function (x, i) { return { idx: i, nama: x.sheet }; }), idx: Math.min(Math.max(+idx || 0, 0), tg.length - 1), sheet: t.sheet, skema: s };
+}
+
+function inputTulisNilai_(f, v) {
+  if (v === '' || v === null || v === undefined) return '';
+  v = String(v).trim();
+  if (f.tipe === 'angka') { const n = num_(v.replace(/\./g, '').replace(',', '.')) ; const p = parseFloat(String(v).replace(',', '.')); return isNaN(p) ? n : p; }
+  if (f.tipe === 'tgl') {
+    const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/); if (!m) return v;
+    return f.fmt === 'date' ? new Date(+m[1], +m[2] - 1, +m[3]) : (+m[3]) + '-' + BLN_PENDEK_[+m[2] - 1] + '-' + m[1].slice(-2);
+  }
+  if (f.tipe === 'bulan') {
+    const m = v.match(/^(\d{4})-(\d{2})$/); if (!m) return v;
+    return BLN_PENDEK_[+m[2] - 1] + '-' + m[1].slice(-2);
+  }
+  return v;
+}
+
+/** Hapus cache dashboard tahun tertentu (dipanggil setelah input / edit / hapus data). */
+function hapusCache_(th) {
+  const c = CacheService.getScriptCache(), key = CACHE_VERSI_ + th;
+  const n = parseInt(c.get(key + '_n') || '0', 10), ks = [key + '_n'];
+  for (let i = 0; i < n; i++) ks.push(key + '_' + i);
+  c.removeAll(ks);
+}
+
+/** data = { indexKolom: nilai }. paksa=true melewati peringatan duplikat. */
+function simpanInput(token, tahun, modul, idx, data, paksa) {
+  inputAdmin_(token);
+  const th = inputTh_(tahun);
+  const tg = inputTargets_(modul, th);
+  const t = tg[+idx || 0];
+  if (!t) throw new Error('Sheet tujuan tidak ditemukan.');
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(20000)) return { ok: false, pesan: 'Server sedang dipakai orang lain. Coba lagi sebentar lagi.' };
+  try {
+    const ss = inputSS_(th), sh = sheet_(ss, t.sheet);
+    const k = inputKepala_(sh, t), sk = inputSkema_(sh, t);
+    const F = {}; sk.fields.forEach(function (f) { F[f.i] = f; });
+    const isi = {};
+    Object.keys(data || {}).forEach(function (i) {
+      const f = F[i]; if (!f || f.formula) return;
+      const v = inputTulisNilai_(f, data[i]);
+      if (v !== '') isi[i] = v;
+    });
+    // validasi wajib
+    for (let a = 0; a < sk.fields.length; a++) {
+      const f = sk.fields[a];
+      if (f.wajib && (isi[f.i] === undefined)) return { ok: false, pesan: 'Kolom "' + f.label + '" wajib diisi.' };
+    }
+    // tanggal keluar tidak boleh lebih awal dari tanggal masuk
+    let masuk = null, keluar = null;
+    sk.fields.forEach(function (f) {
+      if (f.tipe !== 'tgl' || isi[f.i] === undefined) return;
+      const d = (isi[f.i] instanceof Date) ? isi[f.i] : (function () { const p = parseTgl_(isi[f.i]); return p ? new Date(p.y, p.m - 1, p.d) : null; })();
+      if (!d) return;
+      const l = norm_(f.label);
+      if (/masuk/.test(l)) masuk = d; else if (/keluar/.test(l)) keluar = d;
+    });
+    if (masuk && keluar && keluar < masuk) return { ok: false, pesan: 'Tanggal keluar tidak boleh lebih awal dari tanggal masuk.' };
+
+    const lastRow = sh.getLastRow();
+    const n = Math.max(1, lastRow - k.mulai + 1);
+    // cek duplikat
+    if (t.unik && !paksa) {
+      const ci = t.unik.map(function (u) { return col_(k.norm, u); });
+      if (ci.every(function (x) { return x > -1; }) && lastRow >= k.mulai) {
+        const d = sh.getRange(k.mulai, 1, n, k.lastCol).getDisplayValues();
+        const kini = ci.map(function (x) { return norm_(isi[x] instanceof Date ? '' : (isi[x] || '')); });
+        const ada = d.some(function (r) { return ci.every(function (x, q) { return norm_(r[x]) === kini[q]; }); });
+        if (ada) return { ok: false, duplikat: true, pesan: 'Data dengan ' + t.unik.join(' + ') + ' yang sama sudah ada di sheet.' };
+      }
+    }
+    // baris kosong berikutnya, berdasarkan kolom kunci
+    let baris = lastRow + 1;
+    if (sk.kcol > -1 && lastRow >= k.mulai) {
+      const kv = sh.getRange(k.mulai, sk.kcol + 1, n, 1).getValues();
+      let last = -1; kv.forEach(function (r, q) { if (String(r[0]).trim() !== '') last = q; });
+      baris = k.mulai + last + 1;
+    }
+    const prev = baris - 1;
+    if (sh.getMaxRows() < baris) sh.insertRowsAfter(sh.getMaxRows(), baris - sh.getMaxRows());
+    // salin format baris sebelumnya
+    if (prev >= k.mulai) sh.getRange(prev, 1, 1, k.lastCol).copyTo(sh.getRange(baris, 1, 1, k.lastCol), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+    // salin rumus (bukan ARRAYFORMULA)
+    sk.fields.forEach(function (f) {
+      if (!f.formula || prev < k.mulai) return;
+      const src = sh.getRange(prev, f.i + 1), dst = sh.getRange(baris, f.i + 1);
+      const fx = src.getFormula();
+      if (fx && fx.toUpperCase().indexOf('ARRAYFORMULA') < 0 && !dst.getFormula()) src.copyTo(dst, SpreadsheetApp.CopyPasteType.PASTE_FORMULA, false);
+    });
+    // tulis nilai input
+    Object.keys(isi).forEach(function (i) { sh.getRange(baris, +i + 1).setValue(isi[i]); });
+    SpreadsheetApp.flush();
+
+    // log
+    let lg = ss.getSheetByName(LOG_INPUT);
+    if (!lg) { lg = ss.insertSheet(LOG_INPUT); lg.appendRow(['Waktu', 'Peran', 'Tahun', 'Modul', 'Sheet', 'Baris', 'Data']); lg.setFrozenRows(1); }
+    const ringkas = {}; Object.keys(isi).forEach(function (i) { ringkas[F[i].label] = isi[i] instanceof Date ? Utilities.formatDate(isi[i], Session.getScriptTimeZone(), 'yyyy-MM-dd') : isi[i]; });
+    lg.appendRow([new Date(), 'admin', th, modul, t.sheet, baris, JSON.stringify(ringkas)]);
+
+    hapusCache_(th);
+    return { ok: true, pesan: 'Tersimpan di sheet "' + t.sheet + '" baris ' + baris + '.', skema: inputSkema_(sh, t) };
+  } finally { lock.releaseLock(); }
+}
+
+/* ======================================================================
+ *  EDIT & HAPUS DATA DARI DASHBOARD
+ * ====================================================================== */
+function inputTarget_(modul, th, idx) {
+  const t = inputTargets_(modul, th)[+idx || 0];
+  if (!t) throw new Error('Sheet tujuan tidak tersedia untuk modul/tahun ini.');
+  return t;
+}
+
+function inputLog_(ss, th, aksi, modul, sheetName, baris, obj) {
+  let lg = ss.getSheetByName(LOG_INPUT);
+  if (!lg) { lg = ss.insertSheet(LOG_INPUT); lg.appendRow(['Waktu', 'Peran', 'Tahun', 'Modul', 'Sheet', 'Baris', 'Data']); lg.setFrozenRows(1); }
+  lg.appendRow([new Date(), 'admin', th, modul + ' · ' + aksi, sheetName, baris, JSON.stringify(obj)]);
+}
+
+/** Pastikan baris yang akan diubah masih baris yang sama dengan yang dilihat admin. */
+function inputKunci_(sh, k, sk, baris, kunciAsli) {
+  if (sk.kcol < 0) throw new Error('Kolom kunci sheet tidak ditemukan.');
+  baris = +baris;
+  if (!(baris >= k.mulai) || baris > sh.getLastRow()) throw new Error('Baris tidak valid. Muat ulang daftar lalu coba lagi.');
+  const cur = String(sh.getRange(baris, sk.kcol + 1).getDisplayValue() || '').trim();
+  if (!cur || norm_(cur) !== norm_(kunciAsli)) {
+    throw new Error('Isi baris sudah berubah (mungkin ada yang mengedit atau menghapusnya). Muat ulang daftar lalu coba lagi.');
+  }
+}
+
+function inputTglObj_(v) {
+  if (v instanceof Date) return v;
+  if (v === '' || v === null || v === undefined) return null;
+  const p = parseTgl_(String(v));
+  return p ? new Date(p.y, p.m - 1, p.d) : null;
+}
+
+/** Nilai sel -> nilai untuk form (yyyy-MM-dd, yyyy-MM, angka, atau teks). */
+function inputNilaiForm_(f, v, disp) {
+  if (v === '' || v === null || v === undefined) return '';
+  const tz = Session.getScriptTimeZone();
+  if (f.tipe === 'tgl') {
+    const d = inputTglObj_(v);
+    return d ? Utilities.formatDate(d, tz, 'yyyy-MM-dd') : '';
+  }
+  if (f.tipe === 'bulan') {
+    if (v instanceof Date) return Utilities.formatDate(v, tz, 'yyyy-MM');
+    const m = String(v).match(/^([A-Za-z]+)[-\s\/.](\d{2,4})$/);
+    const b = m && BLN_MAP_[m[1].toLowerCase()];
+    if (!b) return '';
+    let y = +m[2]; if (y < 100) y += 2000;
+    return y + '-' + ('0' + b).slice(-2);
+  }
+  if (f.tipe === 'angka') return typeof v === 'number' ? v : num_(v);
+  return String(disp !== undefined ? disp : v);
+}
+
+/** Daftar baris sheet (terbaru di atas) untuk tabel edit. Hanya Admin. */
+function getInputBaris(token, tahun, modul, idx, cari, hal) {
+  inputAdmin_(token);
+  const th = inputTh_(tahun), tg = inputTargets_(modul, th);
+  if (!tg.length) return { targets: [], pesan: 'Modul ini tidak tersedia untuk tahun ' + th + '.' };
+  const ix = Math.min(Math.max(+idx || 0, 0), tg.length - 1), t = tg[ix];
+  const sh = sheet_(inputSS_(th), t.sheet), k = inputKepala_(sh, t), sk = inputSkema_(sh, t);
+  if (sk.kcol < 0) throw new Error('Kolom kunci sheet "' + t.sheet + '" tidak ditemukan.');
+  const vis = sk.fields.filter(function (f) { return !f.formula; }).slice(0, 7);
+  const lastRow = sh.getLastRow(), n = lastRow - k.mulai + 1;
+  const qs = norm_(cari || ''), rows = [];
+  if (n > 0) {
+    const d = sh.getRange(k.mulai, 1, n, k.lastCol).getDisplayValues();
+    for (let r = d.length - 1; r >= 0; r--) {
+      const row = d[r], kv = String(row[sk.kcol] || '').trim();
+      if (!kv) continue;
+      if (qs && !row.some(function (c) { return norm_(c).indexOf(qs) > -1; })) continue;
+      rows.push({ r: k.mulai + r, k: kv, c: vis.map(function (f) { return row[f.i]; }) });
+    }
+  }
+  const PS = 20, total = rows.length, pages = Math.max(1, Math.ceil(total / PS));
+  const h = Math.min(Math.max(+hal || 0, 0), pages - 1);
+  return {
+    targets: tg.map(function (x, i) { return { idx: i, nama: x.sheet }; }), idx: ix, sheet: t.sheet,
+    fields: sk.fields, kepala: vis.map(function (f) { return f.label; }),
+    total: total, hal: h, pages: pages, rows: rows.slice(h * PS, h * PS + PS)
+  };
+}
+
+/** Nilai satu baris untuk mengisi form edit. */
+function getInputRow(token, tahun, modul, idx, baris, kunciAsli) {
+  inputAdmin_(token);
+  const th = inputTh_(tahun), t = inputTarget_(modul, th, idx);
+  const sh = sheet_(inputSS_(th), t.sheet), k = inputKepala_(sh, t), sk = inputSkema_(sh, t);
+  inputKunci_(sh, k, sk, baris, kunciAsli);
+  const rg = sh.getRange(+baris, 1, 1, k.lastCol), v = rg.getValues()[0], d = rg.getDisplayValues()[0], out = {};
+  sk.fields.forEach(function (f) { if (!f.formula) out[f.i] = inputNilaiForm_(f, v[f.i], d[f.i]); });
+  return out;
+}
+
+/** data = hanya kolom yang berubah { indexKolom: nilai }. Nilai kosong = hapus isi sel. */
+function updateInput(token, tahun, modul, idx, baris, kunciAsli, data) {
+  inputAdmin_(token);
+  const th = inputTh_(tahun), t = inputTarget_(modul, th, idx);
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(20000)) throw new Error('Server sedang dipakai orang lain. Coba lagi sebentar lagi.');
+  try {
+    const ss = inputSS_(th), sh = sheet_(ss, t.sheet), k = inputKepala_(sh, t), sk = inputSkema_(sh, t);
+    inputKunci_(sh, k, sk, baris, kunciAsli);
+    baris = +baris;
+    const F = {}; sk.fields.forEach(function (f) { F[f.i] = f; });
+    const baru = {};
+    Object.keys(data || {}).forEach(function (i) {
+      const f = F[i]; if (!f || f.formula) return;
+      baru[i] = inputTulisNilai_(f, data[i]);
+    });
+    if (!Object.keys(baru).length) throw new Error('Tidak ada perubahan untuk disimpan.');
+    if (baru[sk.kcol] === '') throw new Error('Kolom "' + F[sk.kcol].label + '" wajib diisi.');
+
+    const rg = sh.getRange(baris, 1, 1, k.lastCol), rowV = rg.getValues()[0], rowD = rg.getDisplayValues()[0];
+    let masuk = null, keluar = null;
+    sk.fields.forEach(function (f) {
+      if (f.tipe !== 'tgl') return;
+      const d = inputTglObj_(baru[f.i] !== undefined ? baru[f.i] : rowV[f.i]); if (!d) return;
+      const l = norm_(f.label);
+      if (/masuk/.test(l)) masuk = d; else if (/keluar/.test(l)) keluar = d;
+    });
+    if (masuk && keluar && keluar < masuk) throw new Error('Tanggal keluar tidak boleh lebih awal dari tanggal masuk.');
+
+    const tz = Session.getScriptTimeZone(), sebelum = {}, sesudah = {};
+    Object.keys(baru).forEach(function (i) {
+      const cell = sh.getRange(baris, +i + 1), v = baru[i];
+      sebelum[F[i].label] = rowD[i];
+      if (v === '') cell.clearContent(); else cell.setValue(v);
+      sesudah[F[i].label] = v instanceof Date ? Utilities.formatDate(v, tz, 'yyyy-MM-dd') : v;
+    });
+    SpreadsheetApp.flush();
+    inputLog_(ss, th, 'EDIT', modul, t.sheet, baris, { sebelum: sebelum, sesudah: sesudah });
+    hapusCache_(th);
+    return { ok: true, pesan: 'Perubahan tersimpan di sheet "' + t.sheet + '" baris ' + baris + '.' };
+  } finally { lock.releaseLock(); }
+}
+
+function hapusInput(token, tahun, modul, idx, baris, kunciAsli) {
+  inputAdmin_(token);
+  const th = inputTh_(tahun), t = inputTarget_(modul, th, idx);
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(20000)) throw new Error('Server sedang dipakai orang lain. Coba lagi sebentar lagi.');
+  try {
+    const ss = inputSS_(th), sh = sheet_(ss, t.sheet), k = inputKepala_(sh, t), sk = inputSkema_(sh, t);
+    inputKunci_(sh, k, sk, baris, kunciAsli);
+    baris = +baris;
+    const d = sh.getRange(baris, 1, 1, k.lastCol).getDisplayValues()[0], isi = {};
+    sk.fields.forEach(function (f) { if (d[f.i] !== '') isi[f.label] = d[f.i]; });
+    sh.deleteRow(baris);
+    SpreadsheetApp.flush();
+    inputLog_(ss, th, 'HAPUS', modul, t.sheet, baris, isi);
+    hapusCache_(th);
+    return { ok: true, pesan: 'Baris ' + baris + ' dihapus dari sheet "' + t.sheet + '". Isinya tersimpan di LOG INPUT.' };
+  } finally { lock.releaseLock(); }
+}/* ======================================================================
+ *  DIAGNOSA SELISIH TOTAL DOKUMEN PENGADAAN (dashboard vs RINGKASAN)
+ *  Hasil ditulis ke sheet "DIAGNOSA PENGADAAN". Tidak mengubah data lain.
+ * ====================================================================== */
+function diagnosaPengadaan() {
+  const ss = SpreadsheetApp.openById(SS_ID);
+  const t = readTable_(ss, SH.PENGADAAN, 1), h = t.head;
+  const iDesk = col_(h, 'deskripsi pekerjaan'), iTipe = col_(h, 'tipe pengadaan');
+  const iTgl = col_(h, 'tgl spk'), iSt = col_(h, 'status'), iKat = col_(h, 'kategori');
+  const iNo = col_(h, 'no dok'), iBln = col_(h, 'bulan kontrak');
+  if (iDesk < 0) throw new Error('Kolom "Deskripsi Pekerjaan" tidak ditemukan');
+
+  const g = function (r, i) { return i > -1 ? String(r[i] || '').trim() : ''; };
+  const perTipe = {}, perStatus = {}, aneh = [], kunciDok = {}, dobel = [];
+  let totalDash = 0, cocokFilter = 0;
+
+  t.rows.forEach(function (r, i) {
+    const d = g(r, iDesk);
+    if (!d || barisTotal_(d)) return;
+    totalDash++;
+    const baris = i + 2;
+    const tipe = g(r, iTipe), tglTxt = g(r, iTgl), noDok = g(r, iNo);
+
+    perTipe[tipe || '(KOSONG)'] = (perTipe[tipe || '(KOSONG)'] || 0) + 1;
+
+    const stTxt = g(r, iKat) || g(r, iSt);
+    const kat = katPbj_(stTxt);
+    const kS = '[' + stTxt + '] → ' + kat;
+    perStatus[kS] = (perStatus[kS] || 0) + 1;
+
+    // alasan baris ini mungkin tidak masuk hitungan RINGKASAN
+    const alasan = [];
+    const tipeBaku = /^(spk|umds|kontrak)$/i.test(tipe);
+    if (!tipeBaku) alasan.push(tipe ? 'tipe tidak baku' : 'tipe kosong');
+    const tg = parseTgl_(tglTxt);
+    let bln = iBln > -1 ? Math.round(num_(r[iBln])) : 0;
+    if (!(bln >= 1 && bln <= 12) && tg && tg.y === 2026) bln = tg.m;
+    if (!tg && !(bln >= 1)) alasan.push('tanggal kosong/tidak terbaca');
+    else if (tg && tg.y !== 2026) alasan.push('tahun ' + tg.y);
+    else if (bln > 11) alasan.push('di luar Jan–Nov');
+    if (!alasan.length) cocokFilter++;
+    else aneh.push([baris, noDok, tipe, tglTxt, stTxt, kat, alasan.join(', '), d.slice(0, 60)]);
+
+    // cek duplikat No Dokumen
+    if (noDok) {
+      if (kunciDok[noDok]) dobel.push([baris, noDok, 'sama dengan baris ' + kunciDok[noDok], d.slice(0, 60)]);
+      else kunciDok[noDok] = baris;
+    }
+  });
+
+  let sh = ss.getSheetByName('DIAGNOSA PENGADAAN');
+  if (!sh) sh = ss.insertSheet('DIAGNOSA PENGADAAN'); else sh.clear();
+  const out = [];
+  out.push(['DIAGNOSA PENGADAAN — dibuat ' + new Date().toLocaleString('id-ID')]);
+  out.push(['Total baris dihitung dashboard (Deskripsi terisi)', totalDash]);
+  out.push(['Baris dgn tipe SPK/UMDS/KONTRAK & periode Jan–Nov 2026', cocokFilter]);
+  out.push(['Baris yang kemungkinan tidak masuk RINGKASAN', aneh.length]);
+  out.push(['No Dokumen ganda', dobel.length]);
+  out.push(['']);
+  out.push(['PER TIPE PENGADAAN (apa adanya, dalam kurung siku)']);
+  Object.keys(perTipe).forEach(function (k) { out.push(['[' + k + ']', perTipe[k]]); });
+  out.push(['']);
+  out.push(['STATUS (teks asli) → KATEGORI dashboard']);
+  Object.keys(perStatus).forEach(function (k) { out.push([k, perStatus[k]]); });
+  out.push(['']);
+  out.push(['BARIS YANG PERLU DICEK']);
+  out.push(['Baris', 'No Dok', 'Tipe', 'Tgl SPK', 'Status', 'Kategori', 'Alasan', 'Deskripsi']);
+  aneh.forEach(function (a) { out.push(a); });
+  out.push(['']);
+  out.push(['NO DOKUMEN GANDA']);
+  out.push(['Baris', 'No Dok', 'Keterangan', 'Deskripsi']);
+  dobel.forEach(function (a) { out.push(a); });
+
+  const lebar = out.reduce(function (m, r) { return Math.max(m, r.length); }, 1);
+  const rata = out.map(function (r) { const c = r.slice(); while (c.length < lebar) c.push(''); return c; });
+  sh.getRange(1, 1, rata.length, lebar).setValues(rata);
+  sh.getRange(1, 1).setFontWeight('bold');
+  sh.autoResizeColumns(1, Math.min(lebar, 8));
+  ss.setActiveSheet(sh);
+  SpreadsheetApp.getUi().alert('Selesai. Dashboard menghitung ' + totalDash + ' baris; ' +
+    aneh.length + ' baris kemungkinan tidak masuk RINGKASAN. Lihat sheet "DIAGNOSA PENGADAAN".');
+}// ===== SCAN PDF RAB =====
+const MODEL = 'gemini-4-hydrogen'; // jika error "model not found", ganti sesuai daftar model di AI Studio
+const SHEET_HASIL = 'HASIL SCAN RAB';
+const KOLOM_REKAP = ['No Dok','Deskripsi Pekerjaan','Deskripsi CI','Jenis Pengadaan (LEL/PDL)','Tipe Pengadaan','Vendor','Netto RAB (Rp)','Nilai SPK/Kontrak / UMDS (Rp)','Tgl SPK/Kontrak/ UMDS','Posisi Berkas','Status','Tgl RAB','File Sumber','Cek Total'];
+const KOLOM_ITEM = ['No','Matnum','Nama Barang','Spesifikasi Teknik','Satuan','Rencana','Harga Satuan (Rp)','Jumlah Harga TDP (Rp)','Jumlah Harga Non TDP (Rp)','Ket'];
+
+function onOpen() {
+  SpreadsheetApp.getUi().createMenu('📄 Scan RAB')
+    .addItem('Upload PDF RAB', 'bukaUploadPdf')
+    .addItem('Atur API Key', 'aturApiKey')
+    .addToUi();
+}
+
+function aturApiKey() {
+  const ui = SpreadsheetApp.getUi();
+  const r = ui.prompt('API Key Gemini', 'Tempel API key dari Google AI Studio:', ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() === ui.Button.OK && r.getResponseText().trim()) {
+    PropertiesService.getScriptProperties().setProperty('GEMINI_API_KEY', r.getResponseText().trim());
+    ui.alert('API key tersimpan.');
+  }
+}
+
+function bukaUploadPdf() {
+  const html = HtmlService.createHtmlOutputFromFile('UploadPdf').setWidth(420).setHeight(260);
+  SpreadsheetApp.getUi().showModalDialog(html, 'Scan PDF RAB');
+}
+
+function prosesPdf(base64, namaFile) {
+  const key = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
+  if (!key) throw new Error('API key belum diatur. Menu Scan RAB > Atur API Key.');
+
+  const prompt =
+    'Ini dokumen RENCANA BIAYA (RAB). Baca seluruh isinya dan balas HANYA JSON valid tanpa teks lain, format: ' +
+    '{"no_dok":"","jenis":"","deskripsi_pekerjaan":"","tgl_rab":"YYYY-MM-DD","netto":0,' +
+    '"item":[{"no":0,"matnum":"","nama_barang":"","spesifikasi":"","satuan":"","rencana":0,"harga_satuan":0,"jumlah_tdp":0,"jumlah_non_tdp":0,"ket":""}]}. ' +
+    'Aturan: no_dok = angka nomor urut pada "Nomor : KR / <angka> / ..." (hanya angkanya). ' +
+    'jenis = PDL atau LEL sesuai kode pada nomor tersebut, kosongkan jika tidak ada. ' +
+    'deskripsi_pekerjaan = judul RAB lengkap. ' +
+    'netto = nilai "JUMLAH (NETTO)" sebelum PPN. Semua angka berupa number murni tanpa "Rp" dan tanpa pemisah ribuan. ' +
+    'Baris judul kelompok (mis. "Kit Maintenance") bukan item. Jika teks bukan Bahasa Indonesia, terjemahkan ke Bahasa Indonesia. ' +
+    'Jika suatu nilai tidak ada, isi string kosong atau 0; jangan menebak.';
+
+  const res = UrlFetchApp.fetch('https://generativelanguage.googleapis.com/v1beta/models/' + MODEL + ':generateContent', {
+    method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+    headers: { 'x-goog-api-key': key },
+    payload: JSON.stringify({
+      contents: [{ parts: [
+        { inline_data: { mime_type: 'application/pdf', data: base64 } },
+        { text: prompt }
+      ]}],
+      generationConfig: { responseMimeType: 'application/json' }
+    })
+  });
+  const body = JSON.parse(res.getContentText());
+  if (res.getResponseCode() !== 200) throw new Error((body.error && body.error.message) || 'Gagal memanggil API');
+  if (!body.candidates || !body.candidates[0] || !body.candidates[0].content) throw new Error('AI tidak mengembalikan hasil. Coba lagi.');
+  const teks = body.candidates[0].content.parts.map(p => p.text || '').join('').replace(/```json|```/g, '').trim();
+  const d = JSON.parse(teks);
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const aman = v => (typeof v === 'string' && v.charAt(0) === '=') ? "'" + v : v;
+  const items = d.item || [];
+  const total = items.reduce((s, i) => s + (Number(i.jumlah_tdp) || 0) + (Number(i.jumlah_non_tdp) || 0), 0);
+  const netto = Number(d.netto) || 0;
+  const cek = (netto && Math.abs(total - netto) < 1) ? 'OK' : 'Total item (' + total + ') tidak sama dengan Netto, cek manual';
+  const tgl = /^\d{4}-\d{2}-\d{2}$/.test(d.tgl_rab || '') ? new Date(d.tgl_rab + 'T00:00:00') : '';
+
+  let hasil = ss.getSheetByName(SHEET_HASIL);
+  if (!hasil) {
+    hasil = ss.insertSheet(SHEET_HASIL);
+    hasil.getRange(1, 1, 1, KOLOM_REKAP.length).setValues([KOLOM_REKAP])
+      .setFontWeight('bold').setBackground('#1F4E79').setFontColor('#FFFFFF').setWrap(true);
+    hasil.setFrozenRows(1);
+  }
+  const noDok = isNaN(Number(d.no_dok)) || d.no_dok === '' ? aman(d.no_dok || '') : Number(d.no_dok);
+  hasil.appendRow([noDok, aman(d.deskripsi_pekerjaan || ''), '', d.jenis || '', '', '', netto || '', '', '', '', '', tgl, namaFile, cek]);
+  const br = hasil.getLastRow();
+  hasil.getRange(br, 7).setNumberFormat('"Rp"#,##0');
+  hasil.getRange(br, 12).setNumberFormat('d-MMM-yy');
+  hasil.getRange(br, 1, 1, KOLOM_REKAP.length).setBorder(true, true, true, true, true, true);
+  if (br === 2) hasil.autoResizeColumns(1, KOLOM_REKAP.length);
+
+  let nama = ('RAB ' + (d.no_dok || namaFile.replace(/\.pdf$/i, ''))).replace(/[\[\]\*\?\/\\:]/g, '').substring(0, 90);
+  if (ss.getSheetByName(nama)) nama += ' ' + Utilities.formatDate(new Date(), 'Asia/Jakarta', 'ddMM-HHmm');
+  const sh = ss.insertSheet(nama);
+  sh.getRange(1, 1).setValue(d.deskripsi_pekerjaan || nama).setFontWeight('bold').setFontSize(12);
+  sh.getRange(3, 1, 1, KOLOM_ITEM.length).setValues([KOLOM_ITEM])
+    .setFontWeight('bold').setBackground('#1F4E79').setFontColor('#FFFFFF').setWrap(true);
+  if (items.length) {
+    const rows = items.map(i => [i.no, aman(i.matnum || ''), aman(i.nama_barang || ''), aman(i.spesifikasi || ''), i.satuan || '',
+      i.rencana, i.harga_satuan, i.jumlah_tdp, i.jumlah_non_tdp, aman(i.ket || '')]);
+    sh.getRange(4, 1, rows.length, KOLOM_ITEM.length).setValues(rows).setBorder(true, true, true, true, true, true);
+    sh.getRange(4, 7, rows.length, 3).setNumberFormat('#,##0');
+  }
+  const tr = 4 + items.length;
+  sh.getRange(tr, 3).setValue('JUMLAH (NETTO)').setFontWeight('bold');
+  sh.getRange(tr, 8).setValue(netto).setNumberFormat('#,##0').setFontWeight('bold');
+  sh.autoResizeColumns(1, KOLOM_ITEM.length);
+
+  ss.setActiveSheet(hasil);
+  return 'Baris ditambahkan ke "' + SHEET_HASIL + '" dan sheet "' + nama + '" dibuat. Cek Total: ' + cek;
+}
