@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { RotateCcw, X } from 'lucide-react';
 import { KpiCard } from '../ui/KpiCard';
+import { MotionCard, MotionFillBar, MotionStaggerGrid } from '../ui/MotionPrimitives';
 import { DonutPanel } from '../charts/DonutPanel';
 import { DataTable, type DataTableColumn } from '../ui/DataTable';
 import { TIPE_COLORS, fmtInt, fmtM, fmtRp, rpOrDash } from '../../utils/formatters';
@@ -28,7 +29,7 @@ export const PenugasanView: React.FC<PenugasanViewProps> = ({ penugasan }) => {
 
   if (!penugasan) {
     return (
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center text-sm text-slate-500">
+      <div className="rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-8 text-center text-sm text-slate-500 dark:text-[#9CA8AA]">
         Data penugasan hanya tersedia pada spreadsheet tahun 2025.
       </div>
     );
@@ -115,7 +116,7 @@ export const PenugasanView: React.FC<PenugasanViewProps> = ({ penugasan }) => {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+      <MotionStaggerGrid className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <KpiCard title="Total penugasan" value={fmtInt(penugasan.total)} subline="Paket penugasan 2025" accentColor="blue" />
         <KpiCard title="Total nilai RAB" value={fmtM(penugasan.nilaiRab)} subline={fmtRp(penugasan.nilaiRab)} accentColor="blue" />
         <KpiCard
@@ -125,16 +126,16 @@ export const PenugasanView: React.FC<PenugasanViewProps> = ({ penugasan }) => {
           accentColor="emerald"
         />
         <KpiCard title="Batal" value={fmtInt(penugasan.batal)} subline="Paket dibatalkan" accentColor="rose" />
-      </div>
+      </MotionStaggerGrid>
 
       {hasFilter && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-blue-200 dark:border-blue-800/60 bg-blue-50/70 dark:bg-blue-950/30 px-3.5 py-2 text-xs">
-          <span className="font-semibold text-blue-700 dark:text-blue-300">Filter aktif:</span>
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[#C69320]/40 dark:border-[#D4AF37]/40 bg-[#FBF5E4]/85 dark:bg-[#142226] px-3.5 py-2 text-xs">
+          <span className="font-bold text-[#855C0D] dark:text-[#F5DFA0]">Filter aktif:</span>
           {fStatus && (
             <button
               type="button"
               onClick={() => setFStatus(null)}
-              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-slate-800 border border-blue-200 px-2 py-0.5 font-medium"
+              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-[#0D1619] border border-[#DCD4C0] dark:border-[#23353B] px-2 py-0.5 font-semibold cursor-pointer"
             >
               Progres: {fStatus} <X className="w-3 h-3" />
             </button>
@@ -143,7 +144,7 @@ export const PenugasanView: React.FC<PenugasanViewProps> = ({ penugasan }) => {
             <button
               type="button"
               onClick={() => setFTipe(null)}
-              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-slate-800 border border-blue-200 px-2 py-0.5 font-medium"
+              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-[#0D1619] border border-[#DCD4C0] dark:border-[#23353B] px-2 py-0.5 font-semibold cursor-pointer"
             >
               Tipe: {fTipe} <X className="w-3 h-3" />
             </button>
@@ -154,17 +155,17 @@ export const PenugasanView: React.FC<PenugasanViewProps> = ({ penugasan }) => {
               setFStatus(null);
               setFTipe(null);
             }}
-            className="ml-auto inline-flex items-center gap-1 font-semibold text-blue-700 dark:text-blue-300 hover:underline"
+            className="ml-auto inline-flex items-center gap-1 font-bold text-[#8E6510] dark:text-[#E6C45A] hover:underline cursor-pointer"
           >
             <RotateCcw className="w-3 h-3" /> Reset filter
           </button>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        <div className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Progres penugasan</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 mb-2">
+      <MotionStaggerGrid className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <MotionCard className="lg:col-span-7 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
+          <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">Progres penugasan</h3>
+          <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5 mb-2">
             Klik baris progres untuk menyaring tabel
           </p>
           <div className="flex-1 flex flex-col justify-between gap-1.5">
@@ -176,32 +177,30 @@ export const PenugasanView: React.FC<PenugasanViewProps> = ({ penugasan }) => {
                   key={st}
                   type="button"
                   onClick={() => setFStatus((c) => (c === st ? null : st))}
-                  className={`w-full text-left rounded-lg p-1.5 -mx-1.5 transition ${
-                    active ? 'bg-blue-50 dark:bg-blue-950/40' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                  className={`w-full text-left rounded-lg p-1.5 -mx-1.5 transition cursor-pointer ${
+                    active ? 'bg-[#FBF5E4] dark:bg-[#D4AF37]/15' : 'hover:bg-stone-100/80 dark:hover:bg-[#142024]'
                   }`}
                 >
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="font-medium text-slate-700 dark:text-slate-200 truncate">{st}</span>
-                    <span className="font-semibold tabular-nums">{fmtInt(cnt)}</span>
+                    <span className="font-semibold text-slate-800 dark:text-[#E5DFD0] truncate">{st}</span>
+                    <span className="font-extrabold tabular-nums text-slate-950 dark:text-white">{fmtInt(cnt)}</span>
                   </div>
-                  <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${(cnt / maxStCount) * 100}%`,
-                        backgroundColor: isBatal ? '#EF4444' : '#3B82F6',
-                      }}
+                  <div className="h-2 rounded-full bg-stone-200/80 dark:bg-[#18262B] overflow-hidden">
+                    <MotionFillBar
+                      pct={(cnt / maxStCount) * 100}
+                      color={isBatal ? '#EF4444' : '#C69320'}
+                      delay={0.18}
                     />
                   </div>
                 </button>
               );
             })}
           </div>
-        </div>
+        </MotionCard>
 
-        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Komposisi tipe penugasan</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 mb-2">
+        <MotionCard className="lg:col-span-5 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
+          <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">Komposisi tipe penugasan</h3>
+          <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5 mb-2">
             Klik tipe untuk menyaring daftar penugasan
           </p>
           <div className="flex-1 flex flex-col">
@@ -218,8 +217,8 @@ export const PenugasanView: React.FC<PenugasanViewProps> = ({ penugasan }) => {
               }))}
             />
           </div>
-        </div>
-      </div>
+        </MotionCard>
+      </MotionStaggerGrid>
 
       <DataTable
         title="Daftar penugasan"

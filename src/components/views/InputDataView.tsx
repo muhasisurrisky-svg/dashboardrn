@@ -29,7 +29,9 @@ import {
   updateSheetValuesBatch,
   type SpreadsheetMeta,
 } from '../../services/sheetsApi';
+import { motion } from 'motion/react';
 import { ConfirmModal } from '../ui/ConfirmModal';
+import { MotionCard, MotionStaggerGrid, staggerItemVariants } from '../ui/MotionPrimitives';
 import type {
   InputBarisResult,
   InputBarisRow,
@@ -176,12 +178,12 @@ export const InputDataView: React.FC<InputDataViewProps> = ({
 
   if (role !== 'admin') {
     return (
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center space-y-2">
-        <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-500">
+      <div className="rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-8 text-center space-y-2">
+        <div className="w-10 h-10 rounded-xl bg-[#FAF8F2] dark:bg-[#111D21] border border-[#E5DFD0] dark:border-[#1D2D32] flex items-center justify-center mx-auto text-[#8E6510] dark:text-[#E6C45A]">
           <Lock className="w-5 h-5" />
         </div>
-        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Akses Khusus Admin</h3>
-        <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+        <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">Akses Khusus Admin</h3>
+        <p className="text-xs text-slate-500 dark:text-[#9CA8AA] max-w-md mx-auto">
           Halaman Input Data (tambah, ubah, dan hapus baris Google Sheet) hanya aktif saat Anda masuk dengan peran Admin.
         </p>
       </div>
@@ -190,7 +192,7 @@ export const InputDataView: React.FC<InputDataViewProps> = ({
 
   if (!writeCapable) {
     return (
-      <div className="rounded-xl border border-amber-200 dark:border-amber-800/60 bg-white dark:bg-slate-900 p-6 sm:p-8 space-y-3">
+      <div className="rounded-xl border border-amber-200 dark:border-amber-800/60 bg-white dark:bg-[#0D1619] p-6 sm:p-8 space-y-3">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
             <Lock className="w-5 h-5" />
@@ -455,16 +457,16 @@ export const InputDataView: React.FC<InputDataViewProps> = ({
   return (
     <div className="space-y-4">
       {/* Top Control Header */}
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 flex flex-wrap items-center justify-between gap-3">
+      <MotionCard className="rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-0.5 text-xs">
+          <div className="inline-flex rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-[#FAF8F2] dark:bg-[#091114] p-0.5 text-xs">
             <button
               type="button"
               onClick={() => setMode('tambah')}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-bold transition cursor-pointer ${
                 mode === 'tambah'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-300'
+                  ? 'bg-gradient-to-r from-[#B88B28] to-[#D4AF37] text-[#070D0F] shadow-xs'
+                  : 'text-slate-600 dark:text-[#9CA8AA]'
               }`}
             >
               <FilePlus2 className="w-3.5 h-3.5" />
@@ -473,10 +475,10 @@ export const InputDataView: React.FC<InputDataViewProps> = ({
             <button
               type="button"
               onClick={() => setMode('kelola')}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-bold transition cursor-pointer ${
                 mode === 'kelola'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-300'
+                  ? 'bg-gradient-to-r from-[#B88B28] to-[#D4AF37] text-[#070D0F] shadow-xs'
+                  : 'text-slate-600 dark:text-[#9CA8AA]'
               }`}
             >
               <Edit3 className="w-3.5 h-3.5" />
@@ -490,10 +492,10 @@ export const InputDataView: React.FC<InputDataViewProps> = ({
                 key={m.id}
                 type="button"
                 onClick={() => setModul(m.id)}
-                className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
                   modul === m.id
-                    ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-600'
-                    : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    ? 'border-[#C69320] bg-[#FBF5E4] text-[#855C0D] dark:bg-[#D4AF37]/15 dark:text-[#F5DFA0] dark:border-[#D4AF37]/50'
+                    : 'border-[#DCD4C0] dark:border-[#23353B] bg-white dark:bg-[#0D1619] text-slate-600 dark:text-[#9CA8AA] hover:bg-[#FAF8F2] dark:hover:bg-[#142024]'
                 }`}
               >
                 {m.label}
@@ -507,7 +509,7 @@ export const InputDataView: React.FC<InputDataViewProps> = ({
             value={targetIdx}
             onChange={(e) => setTargetIdx(Number(e.target.value))}
             aria-label="Pilih sheet tujuan"
-            className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-xs font-medium"
+            className="rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-[#FAF8F2] dark:bg-[#111D21] px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-[#F4EFE4]"
           >
             {activeTargets.map((t) => (
               <option key={t.idx} value={t.idx}>
@@ -516,11 +518,11 @@ export const InputDataView: React.FC<InputDataViewProps> = ({
             ))}
           </select>
         )}
-      </div>
+      </MotionCard>
 
       {loading && (
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 flex items-center justify-center gap-2 text-xs text-slate-500">
-          <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+        <div className="rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-8 flex items-center justify-center gap-2 text-xs text-slate-500 dark:text-[#9CA8AA]">
+          <Loader2 className="w-4 h-4 animate-spin text-[#B88B28] dark:text-[#E6C45A]" />
           <span>Memuat struktur kolom dari Google Sheet...</span>
         </div>
       )}
@@ -532,23 +534,24 @@ export const InputDataView: React.FC<InputDataViewProps> = ({
       )}
 
       {!loading && !errorMsg && mode === 'tambah' && schemaRes?.pesan && (
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-center text-xs text-slate-500">
+        <div className="rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-6 text-center text-xs text-slate-500 dark:text-[#9CA8AA]">
           {schemaRes.pesan}
         </div>
       )}
 
       {/* ADD FORM */}
       {!loading && !errorMsg && mode === 'tambah' && schemaRes?.skema && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <form
+        <MotionStaggerGrid className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <motion.form
+            variants={staggerItemVariants}
             onSubmit={handleRequestAdd}
-            className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-4"
+            className="lg:col-span-7 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-4 space-y-4"
           >
-            <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <div className="border-b border-[#E5DFD0] dark:border-[#1D2D32] pb-3">
+              <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">
                 Tambah baris baru · {schemaRes.sheet}
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">
                 Kolom dengan rumus otomatis diisi Google Sheet. Kolom bertanda * wajib diisi.
               </p>
             </div>
@@ -561,7 +564,7 @@ export const InputDataView: React.FC<InputDataViewProps> = ({
                   const val = formValues[f.i] || '';
                   return (
                     <div key={f.i} className={f.label.length > 26 ? 'sm:col-span-2' : ''}>
-                      <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-[#D5CFC2] mb-1">
                         {f.label} {f.wajib && <span className="text-rose-500">*</span>}
                       </label>
                       <input
@@ -580,7 +583,7 @@ export const InputDataView: React.FC<InputDataViewProps> = ({
                         value={val}
                         onChange={(e) => setFormValues((prev) => ({ ...prev, [f.i]: e.target.value }))}
                         placeholder={f.opsi.length ? 'Pilih atau ketik nilai...' : `Masukkan ${f.label.toLowerCase()}`}
-                        className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                        className="w-full rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-[#FAF8F2] dark:bg-[#111D21] px-3 py-1.5 text-xs text-slate-900 dark:text-[#F4EFE4] focus:outline-none focus:ring-2 focus:ring-[#C69320]/30 focus:border-[#C69320]"
                       />
                       {listId && (
                         <datalist id={listId}>
@@ -594,42 +597,42 @@ export const InputDataView: React.FC<InputDataViewProps> = ({
                 })}
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E5DFD0] dark:border-[#1D2D32]">
               <button
                 type="button"
                 onClick={() => setFormValues({})}
-                className="rounded-lg border border-slate-200 dark:border-slate-700 px-3.5 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                className="rounded-lg border border-[#DCD4C0] dark:border-[#23353B] px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-[#D5CFC2] hover:bg-[#FAF8F2] dark:hover:bg-[#142024] cursor-pointer"
               >
                 Bersihkan
               </button>
               <button
                 type="submit"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-xs font-semibold"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#B88B28] to-[#D4AF37] hover:brightness-105 text-[#070D0F] px-4 py-2 text-xs font-extrabold shadow-sm cursor-pointer"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 Simpan ke Google Sheet
               </button>
             </div>
-          </form>
+          </motion.form>
 
           {/* 8 Recent Rows Preview */}
-          <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden flex flex-col">
-            <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">8 baris terakhir di sheet</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Referensi format data terkini</p>
+          <MotionCard className="lg:col-span-5 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] overflow-hidden flex flex-col">
+            <div className="px-4 py-3 border-b border-[#E5DFD0] dark:border-[#1D2D32]">
+              <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">8 baris terakhir di sheet</h3>
+              <p className="text-xs text-slate-500 dark:text-[#9CA8AA]">Referensi format data terkini</p>
             </div>
             <div className="overflow-x-auto flex-1">
               <table className="w-full text-left border-collapse text-xs">
-                <thead className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase text-slate-500">
+                <thead className="bg-[#FAF8F2] dark:bg-[#111D21] border-b border-[#E5DFD0] dark:border-[#1D2D32] text-[11px] uppercase text-slate-500 dark:text-[#9CA8AA]">
                   <tr>
                     {schemaRes.skema.pratinjauKepala.map((k) => (
-                      <th key={k} className="px-3 py-2 font-semibold whitespace-nowrap">
+                      <th key={k} className="px-3 py-2 font-bold whitespace-nowrap">
                         {k}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody className="divide-y divide-[#EFEAE0] dark:divide-[#19282D]">
                   {schemaRes.skema.terakhir.map((row, idx) => (
                     <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
                       {row.map((cell, cIdx) => (
@@ -652,19 +655,19 @@ export const InputDataView: React.FC<InputDataViewProps> = ({
                 </tbody>
               </table>
             </div>
-          </div>
-        </div>
+          </MotionCard>
+        </MotionStaggerGrid>
       )}
 
       {/* MANAGE (EDIT / DELETE) TABLE */}
       {!loading && !errorMsg && mode === 'kelola' && barisRes && (
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+        <MotionCard className="rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] overflow-hidden">
+          <div className="px-4 py-3 border-b border-[#E5DFD0] dark:border-[#1D2D32] flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+              <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">
                 Kelola baris · {barisRes.sheet}
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-[#9CA8AA]">
                 {barisRes.total} baris ditemukan (urutan terbaru di atas)
               </p>
             </div>
@@ -678,27 +681,27 @@ export const InputDataView: React.FC<InputDataViewProps> = ({
                   setPage(0);
                 }}
                 placeholder="Cari di seluruh kolom sheet..."
-                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-8 pr-3 py-1.5 text-xs"
+                className="w-full rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-[#FAF8F2] dark:bg-[#111D21] pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-[#F4EFE4] focus:outline-none focus:ring-2 focus:ring-[#C69320]/30"
               />
             </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
-              <thead className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase text-slate-500">
+              <thead className="bg-[#FAF8F2] dark:bg-[#111D21] border-b border-[#E5DFD0] dark:border-[#1D2D32] text-[11px] uppercase text-slate-500 dark:text-[#9CA8AA]">
                 <tr>
-                  <th className="px-3 py-2 font-semibold">Baris</th>
+                  <th className="px-3 py-2 font-bold">Baris</th>
                   {barisRes.kepala.map((k) => (
-                    <th key={k} className="px-3 py-2 font-semibold whitespace-nowrap">
+                    <th key={k} className="px-3 py-2 font-bold whitespace-nowrap">
                       {k}
                     </th>
                   ))}
-                  <th className="px-3 py-2 text-right font-semibold">Aksi</th>
+                  <th className="px-3 py-2 text-right font-bold">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-[#EFEAE0] dark:divide-[#19282D]">
                 {barisRes.rows.map((rowItem) => (
-                  <tr key={rowItem.r} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <tr key={rowItem.r} className="hover:bg-[#FAF8F2] dark:hover:bg-[#121E22]">
                     <td className="px-3 py-2 font-mono-num text-slate-500">#{rowItem.r}</td>
                     {rowItem.c.map((cell, idx) => (
                       <td key={idx} className="px-3 py-2 max-w-[190px] truncate" title={cell}>
@@ -710,7 +713,7 @@ export const InputDataView: React.FC<InputDataViewProps> = ({
                         <button
                           type="button"
                           onClick={() => handleOpenEdit(rowItem)}
-                          className="inline-flex items-center gap-1 rounded-md border border-slate-200 dark:border-slate-700 px-2 py-1 text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40"
+                          className="inline-flex items-center gap-1 rounded-md border border-[#DCD4C0] dark:border-[#23353B] px-2 py-1 text-[11px] font-bold text-[#8E6510] dark:text-[#E6C45A] hover:bg-[#FBF5E4] dark:hover:bg-[#D4AF37]/15 cursor-pointer"
                         >
                           <Edit3 className="w-3 h-3" /> Edit
                         </button>
@@ -723,7 +726,7 @@ export const InputDataView: React.FC<InputDataViewProps> = ({
                               label: rowItem.k,
                             })
                           }
-                          className="inline-flex items-center gap-1 rounded-md border border-rose-200 dark:border-rose-800/70 px-2 py-1 text-[11px] font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                          className="inline-flex items-center gap-1 rounded-md border border-rose-200 dark:border-rose-800/70 px-2 py-1 text-[11px] font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
                         >
                           <Trash2 className="w-3 h-3" /> Hapus
                         </button>
@@ -746,8 +749,8 @@ export const InputDataView: React.FC<InputDataViewProps> = ({
           </div>
 
           {barisRes.pages > 1 && (
-            <div className="px-4 py-2.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
-              <span className="text-slate-500">
+            <div className="px-4 py-2.5 border-t border-[#E5DFD0] dark:border-[#1D2D32] flex items-center justify-between text-xs">
+              <span className="text-slate-500 dark:text-[#9CA8AA]">
                 Halaman {barisRes.hal + 1} dari {barisRes.pages}
               </span>
               <div className="flex gap-1.5">
@@ -755,7 +758,7 @@ export const InputDataView: React.FC<InputDataViewProps> = ({
                   type="button"
                   disabled={barisRes.hal <= 0}
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1 disabled:opacity-40"
+                  className="rounded-lg border border-[#DCD4C0] dark:border-[#23353B] px-2.5 py-1 disabled:opacity-40 cursor-pointer"
                 >
                   Sebelumnya
                 </button>
@@ -763,31 +766,31 @@ export const InputDataView: React.FC<InputDataViewProps> = ({
                   type="button"
                   disabled={barisRes.hal >= barisRes.pages - 1}
                   onClick={() => setPage((p) => p + 1)}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1 disabled:opacity-40"
+                  className="rounded-lg border border-[#DCD4C0] dark:border-[#23353B] px-2.5 py-1 disabled:opacity-40 cursor-pointer"
                 >
                   Berikutnya
                 </button>
               </div>
             </div>
           )}
-        </div>
+        </MotionCard>
       )}
 
       {/* Edit Modal */}
       {editingRow && barisRes?.skema && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 backdrop-blur-[2px] p-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-            <div className="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-[2px] p-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-[#E5DFD0] dark:border-[#23353B] bg-white dark:bg-[#0D1619] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="px-5 py-3.5 border-b border-[#E5DFD0] dark:border-[#1D2D32] flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">
                   Edit Baris #{editingRow.row1Based} · {barisRes.sheet}
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Ubah nilai kolom non-rumus</p>
+                <p className="text-xs text-slate-500 dark:text-[#9CA8AA]">Ubah nilai kolom non-rumus</p>
               </div>
               <button
                 type="button"
                 onClick={() => setEditingRow(null)}
-                className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -798,7 +801,7 @@ export const InputDataView: React.FC<InputDataViewProps> = ({
                 .filter((f) => !f.formula)
                 .map((f) => (
                   <div key={f.i} className={f.label.length > 26 ? 'sm:col-span-2' : ''}>
-                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-[#D5CFC2] mb-1">
                       {f.label} {f.wajib && <span className="text-rose-500">*</span>}
                     </label>
                     <input
@@ -823,17 +826,17 @@ export const InputDataView: React.FC<InputDataViewProps> = ({
                             : null
                         )
                       }
-                      className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-xs"
+                      className="w-full rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-[#FAF8F2] dark:bg-[#111D21] px-3 py-1.5 text-xs text-slate-900 dark:text-[#F4EFE4] focus:outline-none focus:ring-2 focus:ring-[#C69320]/30"
                     />
                   </div>
                 ))}
             </div>
 
-            <div className="px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+            <div className="px-5 py-3.5 bg-[#FAF8F2] dark:bg-[#091114] border-t border-[#E5DFD0] dark:border-[#1D2D32] flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setEditingRow(null)}
-                className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-xs font-semibold"
+                className="rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-white dark:bg-[#111D21] px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-[#E5DFD0] cursor-pointer"
               >
                 Batal
               </button>
@@ -851,7 +854,7 @@ export const InputDataView: React.FC<InputDataViewProps> = ({
                     payload: editingRow.values,
                   });
                 }}
-                className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-xs font-semibold"
+                className="rounded-lg bg-gradient-to-r from-[#B88B28] to-[#D4AF37] hover:brightness-105 text-[#070D0F] px-4 py-2 text-xs font-extrabold shadow-sm cursor-pointer"
               >
                 Simpan Perubahan
               </button>

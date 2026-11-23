@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { fmtInt, fmtP } from '../../utils/formatters';
 
 export interface DonutSegment {
@@ -17,6 +17,7 @@ interface DonutPanelProps {
   size?: number;
   legendLayout?: 'list' | 'inline' | 'stacked-list';
   showPctInLegend?: boolean;
+  dense?: boolean;
 }
 
 export const DonutPanel: React.FC<DonutPanelProps> = ({
@@ -28,7 +29,21 @@ export const DonutPanel: React.FC<DonutPanelProps> = ({
   size = 176,
   legendLayout = 'list',
   showPctInLegend = true,
+  dense = false,
 }) => {
+  const [drawn, setDrawn] = useState(false);
+
+  useEffect(() => {
+    setDrawn(false);
+    let id = 0;
+    id = requestAnimationFrame(() => {
+      id = requestAnimationFrame(() => setDrawn(true));
+    });
+    return () => {
+      if (id) cancelAnimationFrame(id);
+    };
+  }, [segments]);
+
   const total = segments.reduce((s, d) => s + Math.max(0, d.value), 0);
   const cx = 80;
   const cy = 80;
@@ -50,6 +65,10 @@ export const DonutPanel: React.FC<DonutPanelProps> = ({
   });
 
   const isList = legendLayout === 'list' || legendLayout === 'stacked-list';
+  const compactCenter = centerValue.length > 6 || size <= 156;
+  const centerValueCls = compactCenter
+    ? 'text-base sm:text-[17px] font-extrabold tracking-tight'
+    : 'text-xl sm:text-2xl font-extrabold tracking-tight';
 
   return (
     <div
@@ -57,8 +76,8 @@ export const DonutPanel: React.FC<DonutPanelProps> = ({
         legendLayout === 'list'
           ? 'w-full h-full flex-1 flex flex-col sm:flex-row items-center justify-between gap-4'
           : legendLayout === 'stacked-list'
-          ? 'w-full h-full flex-1 flex flex-col items-center justify-between gap-3'
-          : 'w-full h-full flex-1 flex flex-col items-center justify-between gap-3'
+          ? 'w-full h-full flex-1 flex flex-col items-center justify-between gap-2.5'
+          : 'w-full h-full flex-1 flex flex-col items-center justify-between gap-2.5'
       }
     >
       <div
@@ -72,12 +91,13 @@ export const DonutPanel: React.FC<DonutPanelProps> = ({
             r={r}
             fill="none"
             stroke="currentColor"
-            className="text-slate-100 dark:text-slate-800"
-            strokeWidth="22"
+            className="text-stone-200/80 dark:text-[#1A2A30]"
+            strokeWidth="21"
           />
           {arcs.map((a) => {
             if (a.len <= 0) return null;
             const isDim = activeLabel && activeLabel !== a.label;
+            const targetLen = Math.max(0, a.len - 1.5);
             return (
               <circle
                 key={a.label}
@@ -86,12 +106,12 @@ export const DonutPanel: React.FC<DonutPanelProps> = ({
                 r={r}
                 fill="none"
                 stroke={a.color}
-                strokeWidth="22"
-                strokeDasharray={`${Math.max(0, a.len - 1.5)} ${circ}`}
+                strokeWidth="21"
+                strokeDasharray={`${drawn ? targetLen : 0} ${circ}`}
                 strokeDashoffset={-a.startOffset}
-                className={`transition-opacity duration-150 ${onSelect ? 'cursor-pointer hover:opacity-85' : ''} ${
-                  isDim ? 'opacity-30' : 'opacity-100'
-                }`}
+                className={`transition-[stroke-dasharray,opacity] duration-700 ease-out ${
+                  onSelect ? 'cursor-pointer hover:opacity-85' : ''
+                } ${isDim ? 'opacity-30' : 'opacity-100'}`}
                 onClick={() => onSelect?.(a.label)}
               >
                 <title>{`${a.label}: ${fmtInt(a.value)} (${fmtP(a.frac * 100)})`}</title>
@@ -99,11 +119,11 @@ export const DonutPanel: React.FC<DonutPanelProps> = ({
             );
           })}
         </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-3">
-          <span className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tabular-nums leading-tight">
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-4">
+          <span className={`${centerValueCls} font-display text-slate-950 dark:text-[#F7F3E9] tabular-nums leading-none`}>
             {centerValue}
           </span>
-          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
+          <span className="text-[10px] font-semibold text-slate-500 dark:text-[#9CA8AA] mt-1 leading-none">
             {centerLabel}
           </span>
         </div>
@@ -120,21 +140,29 @@ export const DonutPanel: React.FC<DonutPanelProps> = ({
                 type="button"
                 disabled={!onSelect}
                 onClick={() => onSelect?.(a.label)}
-                className={`w-full flex items-center justify-between gap-2 rounded-lg px-2 py-1 text-left text-xs transition ${
-                  onSelect ? 'hover:bg-slate-100 dark:hover:bg-slate-800/70 cursor-pointer' : 'cursor-default'
-                } ${isActive ? 'bg-slate-100 dark:bg-slate-800 ring-1 ring-blue-500/40' : ''} ${
-                  isDim ? 'opacity-50' : ''
-                }`}
+                className={`w-full flex items-center justify-between gap-2 rounded-lg ${
+                  dense ? 'px-1.5 py-1 text-[11px]' : 'px-2 py-1 text-xs'
+                } text-left transition ${
+                  onSelect
+                    ? 'hover:bg-stone-100 dark:hover:bg-[#152227] cursor-pointer'
+                    : 'cursor-default'
+                } ${
+                  isActive
+                    ? 'bg-stone-100 dark:bg-[#152227] ring-1 ring-[#C69320]/45 dark:ring-[#D4AF37]/50'
+                    : ''
+                } ${isDim ? 'opacity-50' : ''}`}
               >
                 <span className="flex items-center gap-2 min-w-0">
-                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
-                  <span className="font-medium text-slate-700 dark:text-slate-200 truncate">{a.label}</span>
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
+                  <span className="font-semibold text-slate-800 dark:text-[#E5DFD0] truncate">{a.label}</span>
                 </span>
-                <span className="flex items-center gap-2.5 shrink-0 tabular-nums">
+                <span className="flex items-center gap-2 shrink-0 tabular-nums">
                   {showPctInLegend && (
-                    <span className="text-[11px] text-slate-400 dark:text-slate-500">{fmtP(a.frac * 100)}</span>
+                    <span className="text-[11px] font-medium text-slate-500 dark:text-[#8E9B9E]">
+                      {fmtP(a.frac * 100)}
+                    </span>
                   )}
-                  <span className="font-semibold text-slate-900 dark:text-slate-100">
+                  <span className="font-bold text-slate-950 dark:text-white">
                     {a.detailText || fmtInt(a.value)}
                   </span>
                 </span>
@@ -154,14 +182,16 @@ export const DonutPanel: React.FC<DonutPanelProps> = ({
                 disabled={!onSelect}
                 onClick={() => onSelect?.(a.label)}
                 className={`inline-flex items-center gap-1.5 text-xs rounded-md px-1.5 py-0.5 transition ${
-                  onSelect ? 'hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer' : 'cursor-default'
-                } ${isActive ? 'bg-slate-100 dark:bg-slate-800 ring-1 ring-blue-500/40' : ''} ${
-                  isDim ? 'opacity-50' : ''
-                }`}
+                  onSelect ? 'hover:bg-stone-100 dark:hover:bg-[#152227] cursor-pointer' : 'cursor-default'
+                } ${
+                  isActive
+                    ? 'bg-stone-100 dark:bg-[#152227] ring-1 ring-[#C69320]/45 dark:ring-[#D4AF37]/50'
+                    : ''
+                } ${isDim ? 'opacity-50' : ''}`}
               >
-                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
-                <span className="text-slate-600 dark:text-slate-300 font-medium">{a.label}</span>
-                <span className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: a.color }} />
+                <span className="text-slate-700 dark:text-[#D5CFC2] font-semibold">{a.label}</span>
+                <span className="font-bold text-slate-950 dark:text-white tabular-nums">
                   {a.detailText || fmtInt(a.value)}
                 </span>
               </button>

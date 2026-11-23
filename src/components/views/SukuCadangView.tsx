@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { RotateCcw, X } from 'lucide-react';
 import { KpiCard } from '../ui/KpiCard';
+import { MotionCard, MotionStaggerGrid } from '../ui/MotionPrimitives';
 import { DataTable, type DataTableColumn, type DataTableFilter } from '../ui/DataTable';
 import { ChartCanvas } from '../charts/ChartCanvas';
 import { fmtInt, fmtM, fmtRp } from '../../utils/formatters';
@@ -87,7 +88,7 @@ export const SukuCadangView: React.FC<SukuCadangViewProps> = ({ sukuCadang, tahu
 
   if (!sukuCadang) {
     return (
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center text-sm text-slate-500">
+      <div className="rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-8 text-center text-sm text-slate-500 dark:text-[#9CA8AA]">
         Data suku cadang tidak tersedia di spreadsheet tahun {tahun}.
       </div>
     );
@@ -179,7 +180,7 @@ export const SukuCadangView: React.FC<SukuCadangViewProps> = ({ sukuCadang, tahu
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <MotionStaggerGrid className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <KpiCard
           title="Total nilai suku cadang"
           value={fmtM(filteredTotal)}
@@ -198,16 +199,16 @@ export const SukuCadangView: React.FC<SukuCadangViewProps> = ({ sukuCadang, tahu
           subline="Terhubung dari daftar pengadaan"
           accentColor="blue"
         />
-      </div>
+      </MotionStaggerGrid>
 
       {hasFilter && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-blue-200 dark:border-blue-800/60 bg-blue-50/70 dark:bg-blue-950/30 px-3.5 py-2 text-xs">
-          <span className="font-semibold text-blue-700 dark:text-blue-300">Filter aktif:</span>
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[#C69320]/40 dark:border-[#D4AF37]/40 bg-[#FBF5E4]/85 dark:bg-[#142226] px-3.5 py-2 text-xs">
+          <span className="font-bold text-[#855C0D] dark:text-[#F5DFA0]">Filter aktif:</span>
           {fVendor !== '__ALL__' && (
             <button
               type="button"
               onClick={() => setFVendor('__ALL__')}
-              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 px-2 py-0.5 font-medium"
+              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-[#0D1619] border border-[#DCD4C0] dark:border-[#23353B] px-2 py-0.5 font-semibold cursor-pointer"
             >
               Vendor: {fVendor} <X className="w-3 h-3" />
             </button>
@@ -216,7 +217,7 @@ export const SukuCadangView: React.FC<SukuCadangViewProps> = ({ sukuCadang, tahu
             <button
               type="button"
               onClick={() => setFJudul('__ALL__')}
-              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 px-2 py-0.5 font-medium"
+              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-[#0D1619] border border-[#DCD4C0] dark:border-[#23353B] px-2 py-0.5 font-semibold cursor-pointer"
             >
               Judul: {fJudul.slice(0, 32)} <X className="w-3 h-3" />
             </button>
@@ -225,7 +226,7 @@ export const SukuCadangView: React.FC<SukuCadangViewProps> = ({ sukuCadang, tahu
             <button
               type="button"
               onClick={() => setFMaterial('__ALL__')}
-              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 px-2 py-0.5 font-medium"
+              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-[#0D1619] border border-[#DCD4C0] dark:border-[#23353B] px-2 py-0.5 font-semibold cursor-pointer"
             >
               Material: {fMaterial.slice(0, 32)} <X className="w-3 h-3" />
             </button>
@@ -237,7 +238,7 @@ export const SukuCadangView: React.FC<SukuCadangViewProps> = ({ sukuCadang, tahu
               setFJudul('__ALL__');
               setFMaterial('__ALL__');
             }}
-            className="ml-auto inline-flex items-center gap-1 font-semibold text-blue-700 dark:text-blue-300 hover:underline"
+            className="ml-auto inline-flex items-center gap-1 font-bold text-[#8E6510] dark:text-[#E6C45A] hover:underline cursor-pointer"
           >
             <RotateCcw className="w-3 h-3" /> Reset filter
           </button>
@@ -245,13 +246,13 @@ export const SukuCadangView: React.FC<SukuCadangViewProps> = ({ sukuCadang, tahu
       )}
 
       {/* Top 10 Material Horizontal Bar + Vendor Table */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        <div className="lg:col-span-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+      <MotionStaggerGrid className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <MotionCard className="lg:col-span-6 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
           <div className="mb-2 shrink-0">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">
               10 material dengan nilai terbesar
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">
               Klik batang untuk memfilter material di tabel
             </p>
           </div>
@@ -271,7 +272,7 @@ export const SukuCadangView: React.FC<SukuCadangViewProps> = ({ sukuCadang, tahu
                     label: 'Nilai',
                     data: topMaterials.map((m) => m.nilai),
                     backgroundColor: topMaterials.map((m) =>
-                      fMaterial === m.label ? '#F26B21' : dark ? '#60A5FA' : '#2F52B3'
+                      fMaterial === m.label ? '#E55A1B' : dark ? '#D4AF37' : '#B88B28'
                     ),
                     borderRadius: 5,
                   },
@@ -317,33 +318,33 @@ export const SukuCadangView: React.FC<SukuCadangViewProps> = ({ sukuCadang, tahu
               },
             })}
           />
-        </div>
+        </MotionCard>
 
-        <div className="lg:col-span-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden flex flex-col">
-          <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <MotionCard className="lg:col-span-6 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] overflow-hidden flex flex-col">
+          <div className="px-4 py-3 border-b border-[#E5DFD0] dark:border-[#1D2D32] flex flex-wrap items-center justify-between gap-2 shrink-0">
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Vendor suku cadang</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Klik baris vendor untuk menyaring data</p>
+              <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">Vendor suku cadang</h3>
+              <p className="text-xs text-slate-500 dark:text-[#9CA8AA]">Klik baris vendor untuk menyaring data</p>
             </div>
             <input
               type="text"
               value={vendorSearch}
               onChange={(e) => setVendorSearch(e.target.value)}
               placeholder="Cari vendor..."
-              className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1 text-xs w-44 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              className="rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-[#FAF8F2] dark:bg-[#111D21] px-2.5 py-1 text-xs w-44 text-slate-900 dark:text-[#F4EFE4] focus:outline-none focus:ring-2 focus:ring-[#C69320]/30"
             />
           </div>
           <div className="overflow-x-auto max-h-72 flex-1">
             <table className="w-full text-left border-collapse text-xs">
-              <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider text-slate-500">
+              <thead className="sticky top-0 bg-[#FAF8F2] dark:bg-[#111D21] border-b border-[#E5DFD0] dark:border-[#1D2D32] text-[11px] uppercase tracking-wider text-slate-500 dark:text-[#9CA8AA]">
                 <tr>
-                  <th className="px-3.5 py-2 font-semibold">Vendor</th>
-                  <th className="px-3 py-2 text-right font-semibold">Item</th>
-                  <th className="px-3 py-2 text-right font-semibold">Qty</th>
-                  <th className="px-3.5 py-2 text-right font-semibold">Total Nilai</th>
+                  <th className="px-3.5 py-2 font-bold">Vendor</th>
+                  <th className="px-3 py-2 text-right font-bold">Item</th>
+                  <th className="px-3 py-2 text-right font-bold">Qty</th>
+                  <th className="px-3.5 py-2 text-right font-bold">Total Nilai</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-[#EFEAE0] dark:divide-[#19282D]">
                 {vendorSummary.map((v) => {
                   const active = fVendor === v.vendor;
                   return (
@@ -351,7 +352,7 @@ export const SukuCadangView: React.FC<SukuCadangViewProps> = ({ sukuCadang, tahu
                       key={v.vendor}
                       onClick={() => setFVendor((cur) => (cur === v.vendor ? '__ALL__' : v.vendor))}
                       className={`cursor-pointer transition ${
-                        active ? 'bg-blue-50 dark:bg-blue-950/40 font-semibold' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                        active ? 'bg-[#FBF5E4] dark:bg-[#D4AF37]/15 font-semibold' : 'hover:bg-[#FAF8F2] dark:hover:bg-[#121E22]'
                       }`}
                     >
                       <td className="px-3.5 py-2 text-slate-800 dark:text-slate-100">{v.vendor}</td>
@@ -364,8 +365,8 @@ export const SukuCadangView: React.FC<SukuCadangViewProps> = ({ sukuCadang, tahu
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
+        </MotionCard>
+      </MotionStaggerGrid>
 
       {/* Main DataTable */}
       <DataTable

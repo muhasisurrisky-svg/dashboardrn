@@ -4,6 +4,7 @@ import { SCurveChart } from '../charts/SCurveChart';
 import { DonutPanel } from '../charts/DonutPanel';
 import { ChartCanvas } from '../charts/ChartCanvas';
 import { DataTable, type DataTableColumn } from '../ui/DataTable';
+import { MotionCard, MotionStaggerGrid } from '../ui/MotionPrimitives';
 import { BLN_LABEL, PROG_ORDER, fmtInt, fmtP, statusTier, twBulanMask, twRange } from '../../utils/formatters';
 import type { ProgramData, ProgramDetailRow, TriwulanType } from '../../types/dashboard';
 
@@ -208,7 +209,7 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
 
   if (!program) {
     return (
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center text-sm text-slate-500">
+      <div className="rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-8 text-center text-sm text-slate-500 dark:text-[#9CA8AA]">
         Data program tidak tersedia di spreadsheet tahun {tahun}.
       </div>
     );
@@ -245,13 +246,13 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
   return (
     <div className="space-y-3">
       {/* Kurva S Realisasi Program (Top-level Card — no nested card clutter) */}
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+      <MotionCard className="rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
         <div className="flex flex-wrap items-start justify-between gap-2 mb-2 shrink-0">
           <div>
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">
               Kurva S realisasi program {kurvaProg === '__SEMUA__' ? 'P24/P48 · MO/GO' : kurvaProg}
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">
               {qRange
                 ? `Kumulatif Jan–${BLN_LABEL[qRange[1] - 1]} (s.d. TW ${tw}) · rencana masuk vs realisasi produksi`
                 : 'Kumulatif unit rencana vs realisasi produksi'}
@@ -261,7 +262,7 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
             value={kurvaProg}
             onChange={(e) => setKurvaProg(e.target.value)}
             aria-label="Pilih program Kurva S"
-            className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200"
+            className="rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-[#FAF8F2] dark:bg-[#111D21] px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-[#F4EFE4] focus:outline-none focus:ring-2 focus:ring-[#C69320]/30"
           >
             <option value="__SEMUA__">Semua program</option>
             {ringkasSorted.map((r) => (
@@ -284,16 +285,16 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
         ) : (
           <p className="text-xs text-slate-400 py-8 text-center">Data kurva belum tersedia.</p>
         )}
-      </div>
+      </MotionCard>
 
       {/* Status Unit Per Program Table (Independent Card) */}
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
+      <MotionCard className="rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] overflow-hidden">
+        <div className="px-4 py-3 border-b border-[#E5DFD0] dark:border-[#1D2D32] flex items-center justify-between gap-2">
           <div>
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">
               Status unit per program{qRange ? ` · Rencana TW ${tw}` : ''}
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-[#9CA8AA]">
               Klik baris program untuk menyaring grafik komposisi dan daftar unit di bawah
             </p>
           </div>
@@ -301,7 +302,7 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
             <button
               type="button"
               onClick={() => setFilterProg(null)}
-              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+              className="text-xs font-bold text-[#8E6510] dark:text-[#E6C45A] hover:underline cursor-pointer"
             >
               Tampilkan semua program
             </button>
@@ -310,19 +311,19 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
-            <thead className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider text-slate-500">
+            <thead className="bg-[#FAF8F2] dark:bg-[#111D21] border-b border-[#E5DFD0] dark:border-[#1D2D32] text-[11px] uppercase tracking-wider text-slate-500 dark:text-[#9CA8AA]">
               <tr>
-                <th className="px-4 py-2.5 font-semibold">Program</th>
-                <th className="px-4 py-2.5 text-right font-semibold">Total Unit</th>
-                <th className="px-4 py-2.5 text-right font-semibold">Realisasi</th>
-                <th className="px-4 py-2.5 text-right font-semibold">TSGO</th>
-                <th className="px-4 py-2.5 text-right font-semibold">Belum Masuk</th>
-                <th className="px-4 py-2.5 text-right font-semibold">Konservasi/Geser</th>
-                <th className="px-4 py-2.5 text-right font-semibold">Lainnya</th>
-                <th className="px-4 py-2.5 text-right font-semibold">% Realisasi</th>
+                <th className="px-4 py-2.5 font-bold">Program</th>
+                <th className="px-4 py-2.5 text-right font-bold">Total Unit</th>
+                <th className="px-4 py-2.5 text-right font-bold">Realisasi</th>
+                <th className="px-4 py-2.5 text-right font-bold">TSGO</th>
+                <th className="px-4 py-2.5 text-right font-bold">Belum Masuk</th>
+                <th className="px-4 py-2.5 text-right font-bold">Konservasi/Geser</th>
+                <th className="px-4 py-2.5 text-right font-bold">Lainnya</th>
+                <th className="px-4 py-2.5 text-right font-bold">% Realisasi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody className="divide-y divide-[#EFEAE0] dark:divide-[#19282D]">
               {ringkasSorted.map((r) => {
                 const active = filterProg === r.program;
                 const tier = statusTier(r.pct);
@@ -332,11 +333,11 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
                     onClick={() => setFilterProg((cur) => (cur === r.program ? null : r.program))}
                     className={`cursor-pointer transition ${
                       active
-                        ? 'bg-blue-50/80 dark:bg-blue-950/40 font-semibold'
-                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                        ? 'bg-[#FBF5E4] dark:bg-[#D4AF37]/15 font-semibold'
+                        : 'hover:bg-[#FAF8F2] dark:hover:bg-[#121E22]'
                     }`}
                   >
-                    <td className="px-4 py-2.5 font-bold text-slate-900 dark:text-slate-100">{r.program}</td>
+                    <td className="px-4 py-2.5 font-extrabold text-slate-950 dark:text-[#F7F3E9]">{r.program}</td>
                     <td className="px-4 py-2.5 text-right tabular-nums">{fmtInt(r.total)}</td>
                     <td className="px-4 py-2.5 text-right tabular-nums text-emerald-600 dark:text-emerald-400">
                       {fmtInt(r.realisasi)}
@@ -354,7 +355,7 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
                 );
               })}
             </tbody>
-            <tfoot className="bg-slate-50 dark:bg-slate-800/70 border-t-2 border-slate-200 dark:border-slate-700 font-semibold">
+            <tfoot className="bg-[#FAF8F2] dark:bg-[#111D21] border-t-2 border-[#E5DFD0] dark:border-[#1D2D32] font-bold">
               <tr>
                 <td className="px-4 py-2.5">Total</td>
                 <td className="px-4 py-2.5 text-right tabular-nums">{fmtInt(totalsRingkas.total)}</td>
@@ -370,21 +371,21 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
             </tfoot>
           </table>
         </div>
-      </div>
+      </MotionCard>
 
       {/* Grouped Bar + Status Donut */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        <div className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+      <MotionStaggerGrid className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <MotionCard className="lg:col-span-7 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
           <div className="flex flex-wrap items-start justify-between gap-2 mb-2 shrink-0">
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+              <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">
                 Realisasi vs rencana per bulan
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">
                 Klik batang bulan untuk menyaring daftar unit di bawah
               </p>
             </div>
-            <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-0.5 text-xs">
+            <div className="inline-flex rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-[#FAF8F2] dark:bg-[#091114] p-0.5 text-xs">
               {SEG_TABS.map((s) => (
                 <button
                   key={s}
@@ -393,10 +394,10 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
                     setSegProg(s);
                     setFilterProg(s === 'Semua' ? null : s);
                   }}
-                  className={`px-2.5 py-1 rounded-md font-medium transition ${
+                  className={`px-2.5 py-1 rounded-md font-bold transition cursor-pointer ${
                     segProg === s
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                      ? 'bg-gradient-to-r from-[#B88B28] to-[#D4AF37] text-[#070D0F] shadow-xs'
+                      : 'text-slate-600 dark:text-[#9CA8AA] hover:text-slate-950 dark:hover:text-white'
                   }`}
                 >
                   {s}
@@ -472,14 +473,14 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
               },
             })}
           />
-        </div>
+        </MotionCard>
 
-        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+        <MotionCard className="lg:col-span-5 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
           <div className="mb-2 shrink-0">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">
               Komposisi status unit · {filterProg || 'Semua program'}{qRange ? ` · TW ${tw}` : ''}
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">
               Klik status untuk memfilter daftar unit di bawah
             </p>
           </div>
@@ -502,18 +503,18 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
               ]}
             />
           </div>
-        </div>
-      </div>
+        </MotionCard>
+      </MotionStaggerGrid>
 
       {/* Active filter strip */}
       {hasFilter && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-blue-200 dark:border-blue-800/60 bg-blue-50/70 dark:bg-blue-950/30 px-3.5 py-2 text-xs">
-          <span className="font-semibold text-blue-700 dark:text-blue-300">Filter unit aktif:</span>
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[#C69320]/40 dark:border-[#D4AF37]/40 bg-[#FBF5E4]/85 dark:bg-[#142226] px-3.5 py-2 text-xs">
+          <span className="font-bold text-[#855C0D] dark:text-[#F5DFA0]">Filter unit aktif:</span>
           {filterProg && (
             <button
               type="button"
               onClick={() => setFilterProg(null)}
-              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 px-2 py-0.5 font-medium"
+              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-[#0D1619] border border-[#DCD4C0] dark:border-[#23353B] px-2 py-0.5 font-semibold cursor-pointer"
             >
               Program: {filterProg} <X className="w-3 h-3" />
             </button>
@@ -522,7 +523,7 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
             <button
               type="button"
               onClick={() => setFilterBulan(null)}
-              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 px-2 py-0.5 font-medium"
+              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-[#0D1619] border border-[#DCD4C0] dark:border-[#23353B] px-2 py-0.5 font-semibold cursor-pointer"
             >
               Bulan: {BLN_LABEL[filterBulan - 1]} <X className="w-3 h-3" />
             </button>
@@ -531,7 +532,7 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
             <button
               type="button"
               onClick={() => setFilterStatus(null)}
-              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 px-2 py-0.5 font-medium"
+              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-[#0D1619] border border-[#DCD4C0] dark:border-[#23353B] px-2 py-0.5 font-semibold cursor-pointer"
             >
               Status: {filterStatus} <X className="w-3 h-3" />
             </button>
@@ -543,7 +544,7 @@ export const ProgramView: React.FC<ProgramViewProps> = ({
               setFilterBulan(null);
               setFilterStatus(null);
             }}
-            className="ml-auto inline-flex items-center gap-1 font-semibold text-blue-700 dark:text-blue-300 hover:underline"
+            className="ml-auto inline-flex items-center gap-1 font-bold text-[#8E6510] dark:text-[#E6C45A] hover:underline cursor-pointer"
           >
             <RotateCcw className="w-3 h-3" /> Reset filter
           </button>

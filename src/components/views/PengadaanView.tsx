@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { RotateCcw, X } from 'lucide-react';
 import type { Plugin } from 'chart.js';
 import { KpiCard } from '../ui/KpiCard';
+import { MotionCard, MotionStaggerGrid } from '../ui/MotionPrimitives';
 import { DataTable, type DataTableColumn } from '../ui/DataTable';
 import { DonutPanel } from '../charts/DonutPanel';
 import { ChartCanvas } from '../charts/ChartCanvas';
@@ -150,7 +151,7 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
 
   if (!pengadaan) {
     return (
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center text-sm text-slate-500">
+      <div className="rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-8 text-center text-sm text-slate-500 dark:text-[#9CA8AA]">
         Data pengadaan tidak tersedia di spreadsheet tahun {tahun}.
       </div>
     );
@@ -235,7 +236,7 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
   return (
     <div className="space-y-3">
       {/* 5 Interactive KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      <MotionStaggerGrid className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         <KpiCard
           title="Total dokumen"
           value={fmtInt(summary.total)}
@@ -274,17 +275,17 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
           subline={fmtRp(summary.nilai)}
           accentColor="blue"
         />
-      </div>
+      </MotionStaggerGrid>
 
       {/* Active Filter Chips */}
       {hasFilter && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-blue-200 dark:border-blue-800/60 bg-blue-50/70 dark:bg-blue-950/30 px-3.5 py-2 text-xs">
-          <span className="font-semibold text-blue-700 dark:text-blue-300">Filter aktif:</span>
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[#C69320]/40 dark:border-[#D4AF37]/40 bg-[#FBF5E4]/85 dark:bg-[#142226] px-3.5 py-2 text-xs">
+          <span className="font-bold text-[#855C0D] dark:text-[#F5DFA0]">Filter aktif:</span>
           {fKat && (
             <button
               type="button"
               onClick={() => setFKat(null)}
-              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 px-2 py-0.5 font-medium text-slate-700 dark:text-slate-200"
+              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-[#0D1619] border border-[#DCD4C0] dark:border-[#23353B] px-2 py-0.5 font-semibold text-slate-800 dark:text-[#F4EFE4] cursor-pointer"
             >
               Status: {fKat} <X className="w-3 h-3" />
             </button>
@@ -293,7 +294,7 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
             <button
               type="button"
               onClick={() => setFTipe(null)}
-              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 px-2 py-0.5 font-medium text-slate-700 dark:text-slate-200"
+              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-[#0D1619] border border-[#DCD4C0] dark:border-[#23353B] px-2 py-0.5 font-semibold text-slate-800 dark:text-[#F4EFE4] cursor-pointer"
             >
               Tipe: {fTipe} <X className="w-3 h-3" />
             </button>
@@ -302,7 +303,7 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
             <button
               type="button"
               onClick={() => setFBulan(null)}
-              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 px-2 py-0.5 font-medium text-slate-700 dark:text-slate-200"
+              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-[#0D1619] border border-[#DCD4C0] dark:border-[#23353B] px-2 py-0.5 font-semibold text-slate-800 dark:text-[#F4EFE4] cursor-pointer"
             >
               Bulan: {BLN_LABEL[fBulan - 1]} <X className="w-3 h-3" />
             </button>
@@ -311,7 +312,7 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
             <button
               type="button"
               onClick={() => setFVendor(null)}
-              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 px-2 py-0.5 font-medium text-slate-700 dark:text-slate-200"
+              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-[#0D1619] border border-[#DCD4C0] dark:border-[#23353B] px-2 py-0.5 font-semibold text-slate-800 dark:text-[#F4EFE4] cursor-pointer"
             >
               Vendor: {fVendor} <X className="w-3 h-3" />
             </button>
@@ -319,7 +320,7 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
           <button
             type="button"
             onClick={resetFilters}
-            className="ml-auto inline-flex items-center gap-1 font-semibold text-blue-700 dark:text-blue-300 hover:underline"
+            className="ml-auto inline-flex items-center gap-1 font-bold text-[#8E6510] dark:text-[#E6C45A] hover:underline cursor-pointer"
           >
             <RotateCcw className="w-3 h-3" /> Reset filter
           </button>
@@ -327,11 +328,11 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
       )}
 
       {/* Middle Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+      <MotionStaggerGrid className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <MotionCard className="lg:col-span-5 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
           <div className="mb-2 shrink-0">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Komposisi tipe pengadaan</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">Komposisi tipe pengadaan</h3>
+            <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">
               Klik tipe atau segmen untuk menyaring data
             </p>
           </div>
@@ -345,14 +346,14 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
               segments={tipeAgg.countSegs}
             />
           </div>
-        </div>
+        </MotionCard>
 
-        <div className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+        <MotionCard className="lg:col-span-7 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
           <div className="mb-2 shrink-0">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">
               Total Pengadaan per Bulan {tahun}
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">
               Jumlah dokumen berdasarkan bulan UMDS, SPK/kontrak. Klik batang bulan untuk menyaring.
             </p>
           </div>
@@ -367,8 +368,8 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
                   const meta = chart.getDatasetMeta(0);
                   const c = chart.ctx;
                   c.save();
-                  c.font = '600 11px "DM Sans", sans-serif';
-                  c.fillStyle = dark ? '#CBD5E1' : '#334155';
+                  c.font = '700 11px "Plus Jakarta Sans", sans-serif';
+                  c.fillStyle = dark ? '#E5DFD0' : '#1E293B';
                   c.textAlign = 'center';
                   meta.data.forEach((bar, i) => {
                     const val = monthlyCounts[i];
@@ -388,11 +389,11 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
                       data: monthlyCounts,
                       backgroundColor: BLN_LABEL.map((_, i) => {
                         const m = i + 1;
-                        if (fBulan === m) return '#F26B21';
+                        if (fBulan === m) return '#E55A1B';
                         if (!twMask[i] || (fBulan && fBulan !== m)) {
-                          return dark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.22)';
+                          return dark ? 'rgba(212, 175, 55, 0.22)' : 'rgba(184, 139, 40, 0.22)';
                         }
-                        return dark ? '#60A5FA' : '#2F52B3';
+                        return dark ? '#D4AF37' : '#B88B28';
                       }),
                       borderRadius: 6,
                       maxBarThickness: 42,
@@ -433,15 +434,15 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
               };
             }}
           />
-        </div>
-      </div>
+        </MotionCard>
+      </MotionStaggerGrid>
 
       {/* Bottom 2-column Row: Nilai per Tipe + Kategori Vendor */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+      <MotionStaggerGrid className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <MotionCard className="lg:col-span-5 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
           <div className="mb-2 shrink-0">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Nilai per tipe pengadaan</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">Nilai per tipe pengadaan</h3>
+            <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">
               Akumulasi nilai kontrak per jenis dokumen
             </p>
           </div>
@@ -455,13 +456,13 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
               segments={tipeAgg.valueSegs}
             />
           </div>
-        </div>
+        </MotionCard>
 
-        <div className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden flex flex-col">
-          <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <MotionCard className="lg:col-span-7 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] overflow-hidden flex flex-col">
+          <div className="px-4 py-3 border-b border-[#E5DFD0] dark:border-[#1D2D32] flex flex-wrap items-center justify-between gap-2 shrink-0">
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Kategori Vendor</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">Kategori Vendor</h3>
+              <p className="text-xs text-slate-500 dark:text-[#9CA8AA]">
                 Klik baris vendor untuk memfilter daftar dokumen di bawah
               </p>
             </div>
@@ -471,40 +472,40 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
                 value={vendorSearch}
                 onChange={(e) => setVendorSearch(e.target.value)}
                 placeholder="Cari nama vendor..."
-                className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1 text-xs w-44 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className="rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-[#FAF8F2] dark:bg-[#111D21] px-2.5 py-1 text-xs w-44 text-slate-900 dark:text-[#F4EFE4] focus:outline-none focus:ring-2 focus:ring-[#C69320]/30"
               />
-              <span className="text-xs text-slate-500 tabular-nums">{vendorStats.length} vendor</span>
+              <span className="text-xs text-slate-500 dark:text-[#8E9B9E] tabular-nums">{vendorStats.length} vendor</span>
             </div>
           </div>
 
           <div className="overflow-x-auto max-h-72 flex-1">
             <table className="w-full text-left border-collapse">
-              <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider text-slate-500">
+              <thead className="sticky top-0 bg-[#FAF8F2] dark:bg-[#111D21] border-b border-[#E5DFD0] dark:border-[#1D2D32] text-[11px] uppercase tracking-wider text-slate-500 dark:text-[#9CA8AA]">
                 <tr>
-                  <th className="px-3.5 py-2 font-semibold">Vendor</th>
+                  <th className="px-3.5 py-2 font-bold">Vendor</th>
                   <th
-                    className="px-3 py-2 text-right font-semibold cursor-pointer hover:text-blue-600"
+                    className="px-3 py-2 text-right font-bold cursor-pointer hover:text-[#A67C21] dark:hover:text-[#E6C45A]"
                     onClick={() => setVendorSortBy('dok')}
                   >
                     Dokumen {vendorSortBy === 'dok' ? '▼' : ''}
                   </th>
                   <th
-                    className="px-3 py-2 text-right font-semibold cursor-pointer hover:text-blue-600"
+                    className="px-3 py-2 text-right font-bold cursor-pointer hover:text-[#A67C21] dark:hover:text-[#E6C45A]"
                     onClick={() => setVendorSortBy('selesai')}
                   >
                     Selesai {vendorSortBy === 'selesai' ? '▼' : ''}
                   </th>
-                  <th className="px-3 py-2 text-right font-semibold">Proses</th>
-                  <th className="px-3 py-2 text-right font-semibold">Gagal</th>
+                  <th className="px-3 py-2 text-right font-bold">Proses</th>
+                  <th className="px-3 py-2 text-right font-bold">Gagal</th>
                   <th
-                    className="px-3.5 py-2 text-right font-semibold cursor-pointer hover:text-blue-600"
+                    className="px-3.5 py-2 text-right font-bold cursor-pointer hover:text-[#A67C21] dark:hover:text-[#E6C45A]"
                     onClick={() => setVendorSortBy('nilai')}
                   >
                     Nilai {vendorSortBy === 'nilai' ? '▼' : ''}
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+              <tbody className="divide-y divide-[#EFEAE0] dark:divide-[#19282D] text-xs">
                 {vendorStats.slice(0, 50).map((v) => {
                   const active = fVendor === v.vendor;
                   return (
@@ -513,8 +514,8 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
                       onClick={() => setFVendor((cur) => (cur === v.vendor ? null : v.vendor))}
                       className={`cursor-pointer transition ${
                         active
-                          ? 'bg-blue-50 dark:bg-blue-950/40 font-semibold'
-                          : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                          ? 'bg-[#FBF5E4] dark:bg-[#D4AF37]/15 font-semibold'
+                          : 'hover:bg-[#FAF8F2] dark:hover:bg-[#121E22]'
                       }`}
                     >
                       <td className="px-3.5 py-2 text-slate-800 dark:text-slate-100">{v.vendor}</td>
@@ -535,8 +536,8 @@ export const PengadaanView: React.FC<PengadaanViewProps> = ({
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
+        </MotionCard>
+      </MotionStaggerGrid>
 
       {/* Main Document Table */}
       <DataTable

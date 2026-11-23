@@ -58,6 +58,22 @@ export function ChartCanvas({
     }
 
     const cfg = buildConfig(ctx, isDark);
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (!prefersReduced) {
+      cfg.options = {
+        ...cfg.options,
+        animation:
+          cfg.options?.animation === false
+            ? false
+            : {
+                duration: 680,
+                easing: 'easeOutQuart',
+                ...(typeof cfg.options?.animation === 'object' ? cfg.options.animation : {}),
+              },
+      };
+    }
     chartRef.current = new Chart(ctx, cfg);
 
     return () => {

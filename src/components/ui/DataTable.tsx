@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { MotionCard } from './MotionPrimitives';
 
 export interface DataTableColumn<T> {
   key: string;
@@ -117,18 +118,20 @@ export function DataTable<T>({
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
+    <MotionCard className="rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] overflow-hidden">
       {(title || subtitle || searchPredicate || filters?.length || headerRight) && (
-        <div className="px-4 py-3.5 border-b border-slate-200 dark:border-slate-800 space-y-3">
+        <div className="px-4 py-3.5 border-b border-[#E5DFD0] dark:border-[#1D2D32] space-y-3">
           {(title || subtitle || headerRight) && (
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
-                {title && <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</h3>}
-                {subtitle && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</p>}
+                {title && (
+                  <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">{title}</h3>
+                )}
+                {subtitle && <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">{subtitle}</p>}
               </div>
               <div className="flex items-center gap-2">
                 {headerRight}
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 tabular-nums">
+                <span className="text-xs font-bold text-slate-600 dark:text-[#9CA8AA] tabular-nums">
                   {sorted.length.toLocaleString('id-ID')} baris
                 </span>
               </div>
@@ -148,7 +151,7 @@ export function DataTable<T>({
                       setPage(0);
                     }}
                     placeholder={searchPlaceholder}
-                    className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 pl-8 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                    className="w-full rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-[#FAF8F2] dark:bg-[#111D21] pl-8 pr-3 py-1.5 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C69320]/30 dark:focus:ring-[#D4AF37]/30 focus:border-[#C69320] dark:focus:border-[#D4AF37]"
                   />
                 </div>
               )}
@@ -162,7 +165,7 @@ export function DataTable<T>({
                     f.onChange(e.target.value);
                     setPage(0);
                   }}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 max-w-[240px]"
+                  className="rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-[#FAF8F2] dark:bg-[#111D21] px-2.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#E5DFD0] focus:outline-none focus:ring-2 focus:ring-[#C69320]/30 dark:focus:ring-[#D4AF37]/30 focus:border-[#C69320] dark:focus:border-[#D4AF37] max-w-[240px]"
                 >
                   <option value="__ALL__">Semua {f.label}</option>
                   {f.options.map((opt) => (
@@ -179,7 +182,7 @@ export function DataTable<T>({
 
       <div className={`overflow-x-auto ${maxBodyHeightClass || ''}`}>
         <table className="w-full border-collapse text-left">
-          <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-800">
+          <thead className="sticky top-0 z-10 bg-[#FAF8F2] dark:bg-[#101C20] border-b border-[#E5DFD0] dark:border-[#1D2D32]">
             <tr>
               {columns.map((col) => {
                 const alignCls =
@@ -200,9 +203,9 @@ export function DataTable<T>({
                         <span className="text-slate-400">
                           {isActiveSort ? (
                             sortDir === 'asc' ? (
-                              <ArrowUp className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                              <ArrowUp className="w-3 h-3 text-[#A67C21] dark:text-[#E6C45A]" />
                             ) : (
-                              <ArrowDown className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                              <ArrowDown className="w-3 h-3 text-[#A67C21] dark:text-[#E6C45A]" />
                             )
                           ) : (
                             <ArrowUpDown className="w-3 h-3 opacity-45" />
@@ -215,10 +218,10 @@ export function DataTable<T>({
               })}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
+          <tbody className="divide-y divide-[#EDE8DC] dark:divide-[#172429]">
             {visibleRows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400">
+                <td colSpan={columns.length} className="px-4 py-8 text-center text-xs text-slate-500 dark:text-[#9CA8AA]">
                   {emptyText}
                 </td>
               </tr>
@@ -229,8 +232,8 @@ export function DataTable<T>({
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                   className={`transition-colors ${
                     onRowClick
-                      ? 'cursor-pointer hover:bg-blue-50/50 dark:hover:bg-blue-950/25'
-                      : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40'
+                      ? 'cursor-pointer hover:bg-[#FBF5E4]/65 dark:hover:bg-[#D4AF37]/10'
+                      : 'hover:bg-[#FAF8F2] dark:hover:bg-[#111C20]'
                   }`}
                 >
                   {columns.map((col) => {
@@ -287,6 +290,6 @@ export function DataTable<T>({
           </div>
         </div>
       )}
-    </div>
+    </MotionCard>
   );
 }

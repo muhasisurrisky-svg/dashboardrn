@@ -1,5 +1,6 @@
 import React from 'react';
 import { KpiCard } from '../ui/KpiCard';
+import { MotionCard, MotionStaggerGrid } from '../ui/MotionPrimitives';
 import { DataTable, type DataTableColumn } from '../ui/DataTable';
 import { SCurveChart } from '../charts/SCurveChart';
 import { fmtM, fmtP, fmtRp, statusTier } from '../../utils/formatters';
@@ -22,7 +23,7 @@ export const AnggaranView: React.FC<AnggaranViewProps> = ({
 }) => {
   if (!anggaran) {
     return (
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center text-sm text-slate-500">
+      <div className="rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-8 text-center text-sm text-slate-500 dark:text-[#9CA8AA]">
         Data anggaran tidak tersedia di spreadsheet tahun {tahun}.
       </div>
     );
@@ -109,12 +110,12 @@ export const AnggaranView: React.FC<AnggaranViewProps> = ({
   return (
     <div className="space-y-3">
       {kurvaAnggaran && kurvaAnggaran.length > 0 && (
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+        <MotionCard className="rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
           <div className="mb-2 shrink-0">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">
               Kurva S penyerapan anggaran
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">
               Kumulatif rencana anggaran terhadap realisasi konsumsi per periode
             </p>
           </div>
@@ -128,10 +129,10 @@ export const AnggaranView: React.FC<AnggaranViewProps> = ({
             isDark={isDark}
             heightClass="h-64 sm:h-72"
           />
-        </div>
+        </MotionCard>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+      <MotionStaggerGrid className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <KpiCard title="Total RKAP" value={fmtM(total.rkap)} subline={fmtRp(total.rkap)} accentColor="blue" />
         <KpiCard
           title="Total Release Budget"
@@ -152,7 +153,7 @@ export const AnggaranView: React.FC<AnggaranViewProps> = ({
           subline={fmtRp(total.available)}
           accentColor={total.available >= 0 ? 'emerald' : 'rose'}
         />
-      </div>
+      </MotionStaggerGrid>
 
       <DataTable
         title="Penyerapan per cost item"

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { AlertTriangle, RotateCcw, X } from 'lucide-react';
 import { KpiCard } from '../ui/KpiCard';
+import { MotionCard, MotionStaggerGrid } from '../ui/MotionPrimitives';
 import { DonutPanel } from '../charts/DonutPanel';
 import { DataTable, type DataTableColumn } from '../ui/DataTable';
 import { aparBadgeClass, fmtInt, fmtP } from '../../utils/formatters';
@@ -43,7 +44,7 @@ export const AparView: React.FC<AparViewProps> = ({ apar }) => {
 
   if (!apar) {
     return (
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center text-sm text-slate-500">
+      <div className="rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-8 text-center text-sm text-slate-500 dark:text-[#9CA8AA]">
         Data APAR tidak tersedia di spreadsheet aktif.
       </div>
     );
@@ -161,7 +162,7 @@ export const AparView: React.FC<AparViewProps> = ({ apar }) => {
       )}
 
       {/* 6 KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <MotionStaggerGrid className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <KpiCard
           title="Total APAR"
           value={fmtInt(apar.total)}
@@ -206,16 +207,16 @@ export const AparView: React.FC<AparViewProps> = ({ apar }) => {
           subline="Memiliki barcode atau tanggal baru"
           accentColor="emerald"
         />
-      </div>
+      </MotionStaggerGrid>
 
       {hasFilter && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-blue-200 dark:border-blue-800/60 bg-blue-50/70 dark:bg-blue-950/30 px-3.5 py-2 text-xs">
-          <span className="font-semibold text-blue-700 dark:text-blue-300">Filter APAR aktif:</span>
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[#C69320]/40 dark:border-[#D4AF37]/40 bg-[#FBF5E4]/85 dark:bg-[#142226] px-3.5 py-2 text-xs">
+          <span className="font-bold text-[#855C0D] dark:text-[#F5DFA0]">Filter APAR aktif:</span>
           {fStatus && (
             <button
               type="button"
               onClick={() => setFStatus(null)}
-              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 px-2 py-0.5 font-medium"
+              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-[#0D1619] border border-[#DCD4C0] dark:border-[#23353B] px-2 py-0.5 font-semibold cursor-pointer"
             >
               Status: {fStatus} <X className="w-3 h-3" />
             </button>
@@ -224,7 +225,7 @@ export const AparView: React.FC<AparViewProps> = ({ apar }) => {
             <button
               type="button"
               onClick={() => setFLokasi(null)}
-              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 px-2 py-0.5 font-medium"
+              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-[#0D1619] border border-[#DCD4C0] dark:border-[#23353B] px-2 py-0.5 font-semibold cursor-pointer"
             >
               Lokasi: {fLokasi} <X className="w-3 h-3" />
             </button>
@@ -235,7 +236,7 @@ export const AparView: React.FC<AparViewProps> = ({ apar }) => {
               setFStatus(null);
               setFLokasi(null);
             }}
-            className="ml-auto inline-flex items-center gap-1 font-semibold text-blue-700 dark:text-blue-300 hover:underline"
+            className="ml-auto inline-flex items-center gap-1 font-bold text-[#8E6510] dark:text-[#E6C45A] hover:underline cursor-pointer"
           >
             <RotateCcw className="w-3 h-3" /> Reset filter
           </button>
@@ -243,11 +244,11 @@ export const AparView: React.FC<AparViewProps> = ({ apar }) => {
       )}
 
       {/* Middle Row: Donut + Titik Penempatan */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+      <MotionStaggerGrid className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <MotionCard className="lg:col-span-5 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
           <div className="mb-2 shrink-0">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Status kadaluarsa APAR</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">Status kadaluarsa APAR</h3>
+            <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">
               Klik status untuk memfilter daftar APAR
             </p>
           </div>
@@ -266,35 +267,35 @@ export const AparView: React.FC<AparViewProps> = ({ apar }) => {
               ]}
             />
           </div>
-        </div>
+        </MotionCard>
 
-        <div className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden flex flex-col">
-          <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <MotionCard className="lg:col-span-7 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] overflow-hidden flex flex-col">
+          <div className="px-4 py-3 border-b border-[#E5DFD0] dark:border-[#1D2D32] flex flex-wrap items-center justify-between gap-2 shrink-0">
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Titik penempatan</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Klik lokasi untuk memfilter daftar APAR</p>
+              <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">Titik penempatan</h3>
+              <p className="text-xs text-slate-500 dark:text-[#9CA8AA]">Klik lokasi untuk memfilter daftar APAR</p>
             </div>
             <input
               type="text"
               value={lokSearch}
               onChange={(e) => setLokSearch(e.target.value)}
               placeholder="Cari lokasi..."
-              className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1 text-xs w-44 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              className="rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-[#FAF8F2] dark:bg-[#111D21] px-2.5 py-1 text-xs w-44 text-slate-900 dark:text-[#F4EFE4] focus:outline-none focus:ring-2 focus:ring-[#C69320]/30"
             />
           </div>
 
           <div className="overflow-x-auto max-h-72 flex-1">
             <table className="w-full text-left border-collapse text-xs">
-              <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider text-slate-500">
+              <thead className="sticky top-0 bg-[#FAF8F2] dark:bg-[#111D21] border-b border-[#E5DFD0] dark:border-[#1D2D32] text-[11px] uppercase tracking-wider text-slate-500 dark:text-[#9CA8AA]">
                 <tr>
-                  <th className="px-3.5 py-2 font-semibold">Lokasi</th>
-                  <th className="px-3 py-2 text-right font-semibold">Total</th>
-                  <th className="px-3 py-2 text-right font-semibold">Aman</th>
-                  <th className="px-3 py-2 text-right font-semibold">Segera</th>
-                  <th className="px-3.5 py-2 text-right font-semibold">Kadaluarsa</th>
+                  <th className="px-3.5 py-2 font-bold">Lokasi</th>
+                  <th className="px-3 py-2 text-right font-bold">Total</th>
+                  <th className="px-3 py-2 text-right font-bold">Aman</th>
+                  <th className="px-3 py-2 text-right font-bold">Segera</th>
+                  <th className="px-3.5 py-2 text-right font-bold">Kadaluarsa</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-[#EFEAE0] dark:divide-[#19282D]">
                 {lokasiSummary.map((l) => {
                   const active = fLokasi === l.lok;
                   return (
@@ -302,7 +303,7 @@ export const AparView: React.FC<AparViewProps> = ({ apar }) => {
                       key={l.lok}
                       onClick={() => setFLokasi((c) => (c === l.lok ? null : l.lok))}
                       className={`cursor-pointer transition ${
-                        active ? 'bg-blue-50 dark:bg-blue-950/40 font-semibold' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                        active ? 'bg-[#FBF5E4] dark:bg-[#D4AF37]/15 font-semibold' : 'hover:bg-[#FAF8F2] dark:hover:bg-[#121E22]'
                       }`}
                     >
                       <td className="px-3.5 py-2 text-slate-800 dark:text-slate-100">{l.lok}</td>
@@ -322,8 +323,8 @@ export const AparView: React.FC<AparViewProps> = ({ apar }) => {
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
+        </MotionCard>
+      </MotionStaggerGrid>
 
       {/* Main APAR Table */}
       <DataTable

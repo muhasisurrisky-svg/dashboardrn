@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, MotionConfig, motion } from 'motion/react';
+import { staggerContainerVariants } from './components/ui/MotionPrimitives';
 import {
   AlertTriangle,
   Building2,
@@ -149,6 +151,7 @@ export default function App() {
   const [loadingMain, setLoadingMain] = useState(false);
   const [loadingPrev, setLoadingPrev] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [dataBatchKey, setDataBatchKey] = useState(0);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   const showToast = useCallback((msg: string, type: 'success' | 'error' = 'success') => {
@@ -214,6 +217,7 @@ export default function App() {
         const meta = await getSpreadsheetMeta(ssId, accessToken);
         const data = await fetchDashboardFromSheets(ssId, yr, accessToken, meta);
         setDashCache((prev) => ({ ...prev, [yr]: data }));
+        setDataBatchKey((k) => k + 1);
 
         if (yr !== '2025') {
           try {
@@ -286,6 +290,7 @@ export default function App() {
           { prolis: metaProlis, bysgu: metaBysgu, apar: metaApar }
         );
         setFasCache(fas);
+        setDataBatchKey((k) => k + 1);
       } catch (err: any) {
         if (err?.name === 'SheetsAuthError') {
           handleAuthError();
@@ -377,7 +382,7 @@ export default function App() {
   /* ---------------- Auth Guard ---------------- */
   if (!authStatus) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-xs text-slate-500">
+      <div className="min-h-screen nusantara-canvas flex items-center justify-center text-xs font-semibold text-slate-600 dark:text-[#9CA8AA]">
         Menghubungkan ke server dashboard...
       </div>
     );
@@ -407,17 +412,24 @@ export default function App() {
       ? 'Dashboard Monitoring Unit Fasilitas'
       : `Dashboard Monitoring Unit Perencanaan Tahun ${tahun}`;
 
-  const metadataItems: string[] = [];
+  const metadataRows: Array<{ label: string; value: string }> = [];
   if (unit === 'perencanaan' && currentData) {
-    metadataItems.push(`Update Pengadaan: ${currentData.hariIni}`);
+    metadataRows.push({ label: 'Update Pengadaan Per Tanggal:', value: currentData.hariIni });
     if (currentData.tglAnggaran) {
-      metadataItems.push(`Anggaran (${tahun === '2025' ? 'RKAD' : 'ZFMF01'}): ${currentData.tglAnggaran}`);
+      metadataRows.push({
+        label: `Update Anggaran (${tahun === '2025' ? 'RKAD' : 'ZFMF01'}) Per Tanggal:`,
+        value: currentData.tglAnggaran,
+      });
     }
-    metadataItems.push(`Program: ${currentData.hariIni}`);
+    metadataRows.push({ label: 'Update Program Per Tanggal:', value: currentData.hariIni });
   } else if (unit === 'fasilitas' && fasCache) {
-    metadataItems.push(`Update Data: ${fasCache.hariIni}`);
-    if (fasCache.prolis) metadataItems.push(`PROLIS: ${fasCache.prolis.rows.length} mesin`);
-    if (fasCache.bysgu) metadataItems.push(`BY SGU: ${fasCache.bysgu.rows.length} item`);
+    metadataRows.push({ label: 'Update Data Per Tanggal:', value: fasCache.hariIni });
+    if (fasCache.prolis) {
+      metadataRows.push({ label: 'PROLIS:', value: `${fasCache.prolis.rows.length} mesin` });
+    }
+    if (fasCache.bysgu) {
+      metadataRows.push({ label: 'BY SGU:', value: `${fasCache.bysgu.rows.length} item` });
+    }
   }
 
   const activeSumberLinks: SheetSourceLink[] =
@@ -440,17 +452,24 @@ export default function App() {
 
   const renderSidebarContent = (collapsed: boolean) => (
     <div className="flex flex-col h-full">
-      <div className="px-4 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-            <Train className="w-5 h-5" />
+      {/* Sidebar Header — vertical stack when collapsed so toggle never overlaps Balai Yasa badge */}
+      <div
+        className={`border-b border-[#E5DFD0] dark:border-[#1D2D32] shrink-0 ${
+          collapsed
+            ? 'px-2 py-3 flex flex-col items-center gap-2'
+            : 'px-3.5 py-3.5 flex items-center justify-between gap-2'
+        }`}
+      >
+        <div className={`flex items-center gap-2.5 min-w-0 ${collapsed ? 'justify-center' : 'flex-1'}`}>
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0D1C21] to-[#173038] text-[#E6C45A] border border-[#D4AF37]/45 flex items-center justify-center shrink-0 shadow-xs">
+            <Train className="w-4.5 h-4.5" />
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <div className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-tight truncate">
+              <div className="font-display text-sm font-extrabold text-slate-950 dark:text-[#F7F3E9] leading-tight truncate">
                 Balai Yasa
               </div>
-              <div className="text-[11px] font-medium text-blue-600 dark:text-blue-400 truncate">
+              <div className="text-[11px] font-bold text-[#8E6510] dark:text-[#E6C45A] truncate">
                 Surabaya Gubeng
               </div>
             </div>
@@ -459,188 +478,196 @@ export default function App() {
         <button
           type="button"
           onClick={() => setSidebarCollapsed((c) => !c)}
-          className="hidden lg:inline-flex p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+          className="hidden lg:inline-flex items-center justify-center p-1.5 rounded-lg text-slate-500 dark:text-[#9CA8AA] hover:text-slate-900 dark:hover:text-[#F5DFA0] hover:bg-stone-100 dark:hover:bg-[#152227] shrink-0 cursor-pointer transition"
           title={collapsed ? 'Perluas menu' : 'Perkecil menu'}
         >
           {collapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
         </button>
       </div>
 
-      {/* Sidebar Unit & Tahun Selectors */}
-      {!collapsed ? (
-        <div className="px-3.5 py-3 border-b border-slate-200 dark:border-slate-800 space-y-2.5 bg-slate-50/60 dark:bg-slate-900/60">
-          <div>
-            <label
-              htmlFor="sidebar-unit-select"
-              className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1"
-            >
-              Unit
-            </label>
-            <select
-              id="sidebar-unit-select"
-              value={unit}
-              onChange={(e) => setUnit(e.target.value as UnitType)}
-              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer"
-            >
-              <option value="perencanaan">Perencanaan</option>
-              <option value="fasilitas">Fasilitas</option>
-            </select>
-          </div>
-
-          {unit === 'perencanaan' && (
+      {/* Unified Scrollable Body: Unit/Tahun + Nav + Mode Toggles + Actions scroll together (not frozen) */}
+      <div className="flex-1 overflow-y-auto flex flex-col">
+        {!collapsed ? (
+          <div className="px-3.5 py-3 border-b border-[#E5DFD0] dark:border-[#1D2D32] space-y-2.5 bg-[#FAF8F2]/80 dark:bg-[#0A1215]/70 shrink-0">
             <div>
               <label
-                htmlFor="sidebar-tahun-select"
-                className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1"
+                htmlFor="sidebar-unit-select"
+                className="block text-[11px] font-bold text-slate-600 dark:text-[#9CA8AA] mb-1"
               >
-                Tahun data
+                Unit
               </label>
               <select
-                id="sidebar-tahun-select"
-                value={tahun}
-                onChange={(e) => setTahun(e.target.value as TahunType)}
-                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-semibold tabular-nums text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer"
+                id="sidebar-unit-select"
+                value={unit}
+                onChange={(e) => setUnit(e.target.value as UnitType)}
+                className="w-full rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-white dark:bg-[#111D21] px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-[#F7F3E9] focus:outline-none focus:ring-2 focus:ring-[#C69320]/35 dark:focus:ring-[#D4AF37]/35 cursor-pointer"
               >
-                <option value="2026">2026</option>
-                <option value="2025">2025</option>
-                <option value="2027">2027</option>
+                <option value="perencanaan">Perencanaan</option>
+                <option value="fasilitas">Fasilitas</option>
               </select>
             </div>
-          )}
-        </div>
-      ) : (
-        <div className="px-2 py-2.5 border-b border-slate-200 dark:border-slate-800 flex flex-col items-center gap-1.5">
+
+            {unit === 'perencanaan' && (
+              <div>
+                <label
+                  htmlFor="sidebar-tahun-select"
+                  className="block text-[11px] font-bold text-slate-600 dark:text-[#9CA8AA] mb-1"
+                >
+                  Tahun data
+                </label>
+                <select
+                  id="sidebar-tahun-select"
+                  value={tahun}
+                  onChange={(e) => setTahun(e.target.value as TahunType)}
+                  className="w-full rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-white dark:bg-[#111D21] px-2.5 py-1.5 text-xs font-bold tabular-nums text-slate-900 dark:text-[#F7F3E9] focus:outline-none focus:ring-2 focus:ring-[#C69320]/35 dark:focus:ring-[#D4AF37]/35 cursor-pointer"
+                >
+                  <option value="2026">2026</option>
+                  <option value="2025">2025</option>
+                  <option value="2027">2027</option>
+                </select>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="px-2 py-2.5 border-b border-[#E5DFD0] dark:border-[#1D2D32] flex flex-col items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => setUnit((u) => (u === 'perencanaan' ? 'fasilitas' : 'perencanaan'))}
+              title={`Unit: ${unit === 'perencanaan' ? 'Perencanaan' : 'Fasilitas'} (klik untuk ganti)`}
+              className="w-full rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-[#FAF8F2] dark:bg-[#111D21] py-1 text-[10px] font-extrabold text-[#8E6510] dark:text-[#E6C45A] hover:bg-stone-100 dark:hover:bg-[#17272C] cursor-pointer"
+            >
+              {unit === 'perencanaan' ? 'PRC' : 'FAS'}
+            </button>
+            {unit === 'perencanaan' && (
+              <button
+                type="button"
+                onClick={() =>
+                  setTahun((y) => (y === '2026' ? '2025' : y === '2025' ? '2027' : '2026'))
+                }
+                title={`Tahun data: ${tahun} (klik untuk ganti)`}
+                className="w-full rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-[#FAF8F2] dark:bg-[#111D21] py-1 text-[10px] font-extrabold tabular-nums text-slate-800 dark:text-[#F7F3E9] hover:bg-stone-100 dark:hover:bg-[#17272C] cursor-pointer"
+              >
+                {tahun}
+              </button>
+            )}
+          </div>
+        )}
+
+        <nav className="px-2.5 py-3 space-y-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  setPresetProg(null);
+                  setPresetPbjKat(null);
+                  setActiveTab(item.id);
+                  setMobileMenuOpen(false);
+                }}
+                title={collapsed ? item.label : undefined}
+                className={`w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs transition cursor-pointer ${
+                  active
+                    ? 'bg-[#FBF5E4] text-[#855C0D] border border-[#D4AF37]/45 dark:bg-[#D4AF37]/15 dark:text-[#F5DFA0] dark:border-[#D4AF37]/35 font-bold shadow-2xs'
+                    : 'border border-transparent text-slate-700 dark:text-[#C8C3B6] font-semibold hover:bg-stone-100/80 dark:hover:bg-[#142024]'
+                } ${collapsed ? 'justify-center px-2' : ''}`}
+              >
+                <Icon
+                  className={`w-4 h-4 shrink-0 ${
+                    active ? 'text-[#A67C21] dark:text-[#E6C45A]' : 'text-slate-500 dark:text-[#8E9B9E]'
+                  }`}
+                />
+                {!collapsed && <span className="truncate">{item.label}</span>}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="mt-auto border-t border-[#E5DFD0] dark:border-[#1D2D32] p-2.5 space-y-1">
           <button
             type="button"
-            onClick={() => setUnit((u) => (u === 'perencanaan' ? 'fasilitas' : 'perencanaan'))}
-            title={`Unit: ${unit === 'perencanaan' ? 'Perencanaan' : 'Fasilitas'} (klik untuk ganti)`}
-            className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700"
+            onClick={() => setIsDark((d) => !d)}
+            title={isDark ? 'Light Mode' : 'Dark Mode'}
+            className={`w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-[#C8C3B6] hover:bg-stone-100 dark:hover:bg-[#142024] transition cursor-pointer ${
+              collapsed ? 'justify-center px-2' : ''
+            }`}
           >
-            {unit === 'perencanaan' ? 'PRC' : 'FAS'}
+            {isDark ? (
+              <Sun className="w-4 h-4 shrink-0 text-[#E6C45A]" />
+            ) : (
+              <Moon className="w-4 h-4 shrink-0 text-[#8E6510]" />
+            )}
+            {!collapsed && <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>}
           </button>
-          {unit === 'perencanaan' && (
-            <button
-              type="button"
-              onClick={() =>
-                setTahun((y) => (y === '2026' ? '2025' : y === '2025' ? '2027' : '2026'))
-              }
-              title={`Tahun data: ${tahun} (klik untuk ganti)`}
-              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-1 text-[10px] font-bold tabular-nums text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
-            >
-              {tahun}
-            </button>
-          )}
-        </div>
-      )}
 
-      <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-1">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const active = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                setPresetProg(null);
-                setPresetPbjKat(null);
-                setActiveTab(item.id);
-                setMobileMenuOpen(false);
-              }}
-              title={collapsed ? item.label : undefined}
-              className={`w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium transition ${
-                active
-                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-semibold'
-                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/70'
-              } ${collapsed ? 'justify-center px-2' : ''}`}
-            >
-              <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-blue-600 dark:text-blue-400' : ''}`} />
-              {!collapsed && <span className="truncate">{item.label}</span>}
-            </button>
-          );
-        })}
-      </nav>
+          <button
+            type="button"
+            onClick={handleToggleFullscreen}
+            title={isFullscreen ? 'Exit FullScreen' : 'FullScreen'}
+            className={`w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-[#C8C3B6] hover:bg-stone-100 dark:hover:bg-[#142024] transition cursor-pointer ${
+              collapsed ? 'justify-center px-2' : ''
+            }`}
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4 shrink-0" /> : <Maximize2 className="w-4 h-4 shrink-0" />}
+            {!collapsed && <span>{isFullscreen ? 'Keluar FullScreen' : 'FullScreen'}</span>}
+          </button>
 
-      <div className="border-t border-slate-200 dark:border-slate-800 p-2.5 space-y-1">
-        <button
-          type="button"
-          onClick={() => setIsDark((d) => !d)}
-          title={isDark ? 'Light Mode' : 'Dark Mode'}
-          className={`w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 ${
-            collapsed ? 'justify-center px-2' : ''
-          }`}
-        >
-          {isDark ? <Sun className="w-4 h-4 shrink-0 text-amber-400" /> : <Moon className="w-4 h-4 shrink-0" />}
-          {!collapsed && <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>}
-        </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPresMode(true);
+              setMobileMenuOpen(false);
+            }}
+            title="Presentation Mode"
+            className={`w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-[#C8C3B6] hover:bg-stone-100 dark:hover:bg-[#142024] transition cursor-pointer ${
+              collapsed ? 'justify-center px-2' : ''
+            }`}
+          >
+            <Presentation className="w-4 h-4 shrink-0" />
+            {!collapsed && <span>Presentation Mode</span>}
+          </button>
 
-        <button
-          type="button"
-          onClick={handleToggleFullscreen}
-          title={isFullscreen ? 'Exit FullScreen' : 'FullScreen'}
-          className={`w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 ${
-            collapsed ? 'justify-center px-2' : ''
-          }`}
-        >
-          {isFullscreen ? <Minimize2 className="w-4 h-4 shrink-0" /> : <Maximize2 className="w-4 h-4 shrink-0" />}
-          {!collapsed && <span>{isFullscreen ? 'Keluar FullScreen' : 'FullScreen'}</span>}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setPresMode(true);
-            setMobileMenuOpen(false);
-          }}
-          title="Presentation Mode"
-          className={`w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 ${
-            collapsed ? 'justify-center px-2' : ''
-          }`}
-        >
-          <Presentation className="w-4 h-4 shrink-0" />
-          {!collapsed && <span>Presentation Mode</span>}
-        </button>
-
-        {!collapsed && (
-          <div className="mt-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-3 space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <div className="text-[11px] font-semibold text-slate-800 dark:text-slate-100">
-                  Masuk sebagai <span className="uppercase text-blue-600 dark:text-blue-400">{role}</span>
-                </div>
-                {(unit === 'fasilitas' ? fasCache?.loadedAt : currentData?.loadedAt) && (
-                  <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                    Dimuat {unit === 'fasilitas' ? fasCache?.loadedAt : currentData?.loadedAt}
-                  </div>
-                )}
-              </div>
+          {!collapsed ? (
+            <div className="pt-2 grid grid-cols-2 gap-1.5">
               <button
                 type="button"
                 onClick={() => handleSignOut(role === 'admin' ? 'user' : 'admin')}
-                className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 shrink-0"
+                className="rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-white dark:bg-[#111D21] px-2 py-1.5 text-[11px] font-bold text-slate-700 dark:text-[#E5DFD0] hover:border-[#C69320] dark:hover:border-[#D4AF37] transition cursor-pointer"
               >
                 Ganti Peran
               </button>
+              <button
+                type="button"
+                onClick={() => handleSignOut()}
+                className="inline-flex items-center justify-center gap-1 rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-white dark:bg-[#111D21] px-2 py-1.5 text-[11px] font-bold text-slate-700 dark:text-[#E5DFD0] hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-300 dark:hover:border-rose-800 transition cursor-pointer"
+              >
+                <LogOut className="w-3 h-3" />
+                Keluar
+              </button>
             </div>
+          ) : (
             <button
               type="button"
               onClick={() => handleSignOut()}
-              className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-1.5 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-rose-600"
+              title="Keluar"
+              className="w-full flex items-center justify-center rounded-xl px-2 py-2 text-slate-600 dark:text-[#9CA8AA] hover:text-rose-600 dark:hover:text-rose-400 hover:bg-stone-100 dark:hover:bg-[#142024] transition cursor-pointer"
             >
-              <LogOut className="w-3 h-3" />
-              Keluar
+              <LogOut className="w-4 h-4 shrink-0" />
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+    <MotionConfig reducedMotion="user">
+      <div className="min-h-screen flex nusantara-canvas text-slate-900 dark:text-[#F4EFE4]">
       {!presMode && (
         <aside
-          className={`hidden lg:flex flex-col shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 h-screen transition-all duration-200 ${
+          className={`hidden lg:flex flex-col shrink-0 border-r border-[#E5DFD0] dark:border-[#1D2D32] bg-white/95 dark:bg-[#0B1417]/95 backdrop-blur-sm sticky top-0 h-screen transition-all duration-200 ${
             sidebarCollapsed ? 'w-[76px]' : 'w-[248px]'
           }`}
         >
@@ -650,12 +677,12 @@ export default function App() {
 
       {mobileMenuOpen && !presMode && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
-          <div className="fixed inset-0 bg-slate-950/50" onClick={() => setMobileMenuOpen(false)} />
-          <aside className="relative z-10 w-64 max-w-[80vw] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 h-full">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs" onClick={() => setMobileMenuOpen(false)} />
+          <aside className="relative z-10 w-64 max-w-[82vw] bg-white dark:bg-[#0B1417] border-r border-[#E5DFD0] dark:border-[#1D2D32] h-full">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(false)}
-              className="absolute right-3 top-3.5 p-1.5 rounded-lg text-slate-400 hover:text-slate-700"
+              className="absolute right-3 top-3.5 p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
               aria-label="Tutup menu"
             >
               <X className="w-4 h-4" />
@@ -666,14 +693,14 @@ export default function App() {
       )}
 
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm px-4 sm:px-6 py-3">
+        <header className="sticky top-0 z-30 border-b border-[#E5DFD0] dark:border-[#1D2D32] bg-white/95 dark:bg-[#0B1417]/95 backdrop-blur-md px-4 sm:px-6 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
               {!presMode && (
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(true)}
-                  className="lg:hidden p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
+                  className="lg:hidden p-1.5 rounded-lg border border-[#DCD4C0] dark:border-[#23353B] text-slate-700 dark:text-[#E5DFD0]"
                   aria-label="Buka menu"
                 >
                   <Menu className="w-4 h-4" />
@@ -683,62 +710,59 @@ export default function App() {
             </div>
 
             <div className="text-center min-w-0 px-2">
-              <h1 className="text-sm sm:text-base lg:text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50 truncate">
+              <h1 className="font-display text-sm sm:text-base lg:text-xl font-extrabold tracking-tight text-slate-950 dark:text-white truncate">
                 {headerTitle}
               </h1>
-              <p className="text-[11px] font-medium text-blue-600 dark:text-blue-400 truncate">
+              <p className="text-xs font-bold text-black dark:text-[#E8D5A3] truncate mt-0.5">
                 UPT Balai Yasa Surabaya Gubeng
               </p>
-              {metadataItems.length > 0 && !presMode && (
-                <p className="hidden md:block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-                  {metadataItems.join(' · ')}
-                </p>
-              )}
             </div>
 
             <div className="flex items-center gap-3 shrink-0">
               {presMode && (
-                <div className="hidden sm:flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2 py-1 text-xs">
+                <div className="hidden sm:flex items-center gap-1 rounded-xl border border-[#DCD4C0] dark:border-[#23353B] bg-[#FAF8F2] dark:bg-[#111D21] px-2 py-1 text-xs">
                   <button
                     type="button"
                     onClick={() => stepPresTab(-1)}
-                    className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
+                    className="p-1 rounded hover:bg-stone-200 dark:hover:bg-[#1A2A30] cursor-pointer"
                     title="Slide sebelumnya"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
-                  <span className="px-1.5 font-semibold text-slate-700 dark:text-slate-200">
+                  <span className="px-1.5 font-bold text-slate-800 dark:text-[#F5DFA0]">
                     {navItems.find((n) => n.id === activeTab)?.label}
                   </span>
                   <button
                     type="button"
                     onClick={() => stepPresTab(1)}
-                    className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
+                    className="p-1 rounded hover:bg-stone-200 dark:hover:bg-[#1A2A30] cursor-pointer"
                     title="Slide berikutnya"
                   >
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
-                  <span className="h-4 w-px bg-slate-300 dark:bg-slate-600 mx-1" />
+                  <span className="h-4 w-px bg-stone-300 dark:bg-[#23353B] mx-1" />
                   <button
                     type="button"
                     onClick={() => setPresZoom((z) => Math.max(70, z - 5))}
-                    className="px-1.5 py-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold"
+                    className="px-1.5 py-0.5 rounded hover:bg-stone-200 dark:hover:bg-[#1A2A30] font-bold cursor-pointer"
                   >
                     A-
                   </button>
-                  <span className="tabular-nums text-[11px] text-slate-500 w-9 text-center">{presZoom}%</span>
+                  <span className="tabular-nums text-[11px] font-semibold text-slate-600 dark:text-[#9CA8AA] w-9 text-center">
+                    {presZoom}%
+                  </span>
                   <button
                     type="button"
                     onClick={() => setPresZoom((z) => Math.min(115, z + 5))}
-                    className="px-1.5 py-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold"
+                    className="px-1.5 py-0.5 rounded hover:bg-stone-200 dark:hover:bg-[#1A2A30] font-bold cursor-pointer"
                   >
                     A+
                   </button>
-                  <span className="h-4 w-px bg-slate-300 dark:bg-slate-600 mx-1" />
+                  <span className="h-4 w-px bg-stone-300 dark:bg-[#23353B] mx-1" />
                   <button
                     type="button"
                     onClick={() => setPresMode(false)}
-                    className="inline-flex items-center gap-1 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-2.5 py-1 text-[11px] font-semibold"
+                    className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-[#C89B32] to-[#E5C158] text-[#070D0F] px-2.5 py-1 text-[11px] font-extrabold cursor-pointer"
                   >
                     Keluar
                   </button>
@@ -750,17 +774,29 @@ export default function App() {
         </header>
 
         <main
-          className="flex-1 p-3 sm:p-4 space-y-3 max-w-[1800px] w-full mx-auto"
+          className="flex-1 p-3 sm:p-4 space-y-2.5 max-w-[1800px] w-full mx-auto"
           style={presMode ? { zoom: `${presZoom}%` } : undefined}
         >
+          {/* Stacked Update Dates exactly matching reference */}
+          {!presMode && metadataRows.length > 0 && (
+            <div className="space-y-0.5 px-0.5 text-xs leading-snug">
+              {metadataRows.map((m) => (
+                <div key={m.label} className="text-slate-600 dark:text-[#9CA8AA] font-medium">
+                  <span>{m.label} </span>
+                  <span className="font-extrabold text-slate-950 dark:text-[#F7F3E9]">{m.value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
           {!presMode && (
-            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 flex flex-wrap items-center justify-between gap-2.5">
+            <div className="rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] px-3.5 py-2 flex flex-wrap items-center justify-between gap-2.5">
               {activeTab !== 'input' ? (
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                  <span className="text-xs font-bold text-slate-600 dark:text-[#9CA8AA] whitespace-nowrap">
                     Filter triwulan:
                   </span>
-                  <div className="inline-flex flex-wrap rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-0.5 text-xs">
+                  <div className="inline-flex flex-wrap rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-[#FAF8F2] dark:bg-[#091114] p-0.5 text-xs">
                     {(
                       [
                         { id: 'all', lbl: 'Tahun ini' },
@@ -774,10 +810,10 @@ export default function App() {
                         key={q.id}
                         type="button"
                         onClick={() => setTw(q.id)}
-                        className={`px-2.5 py-1 rounded-md font-medium whitespace-nowrap transition ${
+                        className={`px-2.5 py-1 rounded-md font-bold whitespace-nowrap transition cursor-pointer ${
                           tw === q.id
-                            ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                            : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                            ? 'bg-gradient-to-r from-[#B88B28] to-[#D4AF37] text-[#070D0F] shadow-xs'
+                            : 'text-slate-700 dark:text-[#C8C3B6] hover:text-slate-950 dark:hover:text-white'
                         }`}
                       >
                         {q.lbl}
@@ -794,7 +830,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => setSettingsOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 whitespace-nowrap shrink-0"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-[#FAF8F2] dark:bg-[#111D21] px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-[#E5DFD0] hover:border-[#C69320] dark:hover:border-[#D4AF37] whitespace-nowrap shrink-0 transition cursor-pointer"
                   >
                     <Settings2 className="w-3.5 h-3.5" />
                     <span className="hidden sm:inline">Pengaturan</span>
@@ -806,7 +842,7 @@ export default function App() {
                   onClick={() =>
                     unit === 'fasilitas' ? loadFasilitas(true) : loadPerencanaan(tahun, true)
                   }
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 disabled:opacity-50 whitespace-nowrap shrink-0"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#C69320]/40 dark:border-[#D4AF37]/40 bg-[#FBF5E4] dark:bg-[#142226] px-2.5 py-1.5 text-xs font-extrabold text-[#7E570B] dark:text-[#E6C45A] hover:brightness-95 dark:hover:brightness-110 disabled:opacity-50 whitespace-nowrap shrink-0 transition cursor-pointer"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${loadingMain ? 'animate-spin' : ''}`} />
                   <span>Muat ulang data</span>
@@ -859,109 +895,118 @@ export default function App() {
                 {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
-                    className="h-28 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+                    className="h-28 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619]"
                   />
                 ))}
               </div>
-              <div className="h-72 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900" />
+              <div className="h-72 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619]" />
             </div>
           ) : (
-            <>
-              {unit === 'perencanaan' && currentData && (
-                <>
-                  {activeTab === 'ringkasan' && (
-                    <RingkasanView
-                      data={currentData}
-                      aparData={currentApar}
-                      prevData={prevData}
-                      prevLoading={loadingPrev}
-                      onRequestPrevYear={loadPrevYear}
-                      tw={tw}
-                      isDark={isDark}
-                      onNavigate={handleNavigate}
-                    />
-                  )}
-                  {activeTab === 'anggaran' && (
-                    <AnggaranView
-                      anggaran={currentData.anggaran}
-                      kurvaAnggaran={currentData.kurvaAnggaran}
-                      tglAnggaran={currentData.tglAnggaran}
-                      tahun={currentData.tahun}
-                      isDark={isDark}
-                    />
-                  )}
-                  {activeTab === 'pengadaan' && (
-                    <PengadaanView
-                      pengadaan={currentData.pengadaan}
-                      tahun={currentData.tahun}
-                      tw={tw}
-                      isDark={isDark}
-                      initialKategori={presetPbjKat}
-                    />
-                  )}
-                  {activeTab === 'program' && (
-                    <ProgramView
-                      program={currentData.program}
-                      tahun={currentData.tahun}
-                      tw={tw}
-                      isDark={isDark}
-                      initialProgram={presetProg}
-                    />
-                  )}
-                  {activeTab === 'nusantara' && (
-                    <NusantaraView
-                      nusantara={currentData.nusantara}
-                      tahun={currentData.tahun}
-                      isDark={isDark}
-                    />
-                  )}
-                  {activeTab === 'suku' && (
-                    <SukuCadangView
-                      sukuCadang={currentData.sukuCadang}
-                      tahun={currentData.tahun}
-                      isDark={isDark}
-                    />
-                  )}
-                  {activeTab === 'apar' && <AparView apar={currentApar} />}
-                  {activeTab === 'penugasan' && <PenugasanView penugasan={currentData.penugasan} />}
-                  {activeTab === 'input' && (
-                    <InputDataView
-                      spreadsheetId={getSpreadsheetIdByYear(sheetConfig, tahun)}
-                      tahun={tahun}
-                      role={role}
-                      accessToken={accessToken}
-                      writeCapable={Boolean(authStatus.writeCapable)}
-                      onAuthError={handleAuthError}
-                      onDataMutated={() => loadPerencanaan(tahun, true)}
-                      onToast={showToast}
-                    />
-                  )}
-                </>
-              )}
+            <AnimatePresence mode="wait" initial={true}>
+              <motion.div
+                key={`${unit}-${tahun}-${activeTab}-${dataBatchKey}`}
+                variants={staggerContainerVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="space-y-2.5"
+              >
+                {unit === 'perencanaan' && currentData && (
+                  <>
+                    {activeTab === 'ringkasan' && (
+                      <RingkasanView
+                        data={currentData}
+                        aparData={currentApar}
+                        prevData={prevData}
+                        prevLoading={loadingPrev}
+                        onRequestPrevYear={loadPrevYear}
+                        tw={tw}
+                        isDark={isDark}
+                        onNavigate={handleNavigate}
+                      />
+                    )}
+                    {activeTab === 'anggaran' && (
+                      <AnggaranView
+                        anggaran={currentData.anggaran}
+                        kurvaAnggaran={currentData.kurvaAnggaran}
+                        tglAnggaran={currentData.tglAnggaran}
+                        tahun={currentData.tahun}
+                        isDark={isDark}
+                      />
+                    )}
+                    {activeTab === 'pengadaan' && (
+                      <PengadaanView
+                        pengadaan={currentData.pengadaan}
+                        tahun={currentData.tahun}
+                        tw={tw}
+                        isDark={isDark}
+                        initialKategori={presetPbjKat}
+                      />
+                    )}
+                    {activeTab === 'program' && (
+                      <ProgramView
+                        program={currentData.program}
+                        tahun={currentData.tahun}
+                        tw={tw}
+                        isDark={isDark}
+                        initialProgram={presetProg}
+                      />
+                    )}
+                    {activeTab === 'nusantara' && (
+                      <NusantaraView
+                        nusantara={currentData.nusantara}
+                        tahun={currentData.tahun}
+                        isDark={isDark}
+                      />
+                    )}
+                    {activeTab === 'suku' && (
+                      <SukuCadangView
+                        sukuCadang={currentData.sukuCadang}
+                        tahun={currentData.tahun}
+                        isDark={isDark}
+                      />
+                    )}
+                    {activeTab === 'apar' && <AparView apar={currentApar} />}
+                    {activeTab === 'penugasan' && <PenugasanView penugasan={currentData.penugasan} />}
+                    {activeTab === 'input' && (
+                      <InputDataView
+                        spreadsheetId={getSpreadsheetIdByYear(sheetConfig, tahun)}
+                        tahun={tahun}
+                        role={role}
+                        accessToken={accessToken}
+                        writeCapable={Boolean(authStatus.writeCapable)}
+                        onAuthError={handleAuthError}
+                        onDataMutated={() => loadPerencanaan(tahun, true)}
+                        onToast={showToast}
+                      />
+                    )}
+                  </>
+                )}
 
-              {unit === 'fasilitas' && fasCache && (
-                <>
-                  {activeTab === 'fas_ringkasan' && (
-                    <FasilitasRingkasanView
-                      fasilitas={fasCache}
-                      tw={tw}
-                      isDark={isDark}
-                      onNavigate={handleNavigate}
-                    />
-                  )}
-                  {activeTab === 'apar' && <AparView apar={fasCache.apar} />}
-                  {activeTab === 'fas_prolis' && (
-                    <FasilitasProlisView fasilitas={fasCache} isDark={isDark} />
-                  )}
-                  {activeTab === 'fas_kelayakan' && (
-                    <FasilitasKelayakanView fasilitas={fasCache} isDark={isDark} />
-                  )}
-                </>
-              )}
-            </>
+                {unit === 'fasilitas' && fasCache && (
+                  <>
+                    {activeTab === 'fas_ringkasan' && (
+                      <FasilitasRingkasanView
+                        fasilitas={fasCache}
+                        tw={tw}
+                        isDark={isDark}
+                        onNavigate={handleNavigate}
+                      />
+                    )}
+                    {activeTab === 'apar' && <AparView apar={fasCache.apar} />}
+                    {activeTab === 'fas_prolis' && (
+                      <FasilitasProlisView fasilitas={fasCache} isDark={isDark} />
+                    )}
+                    {activeTab === 'fas_kelayakan' && (
+                      <FasilitasKelayakanView fasilitas={fasCache} isDark={isDark} />
+                    )}
+                  </>
+                )}
+
+                {!presMode && activeSumberLinks.length > 0 && <SumberCard links={activeSumberLinks} />}
+              </motion.div>
+            </AnimatePresence>
           )}
-
-          {!presMode && activeSumberLinks.length > 0 && <SumberCard links={activeSumberLinks} />}
         </main>
       </div>
 
@@ -995,19 +1040,28 @@ export default function App() {
         }}
       />
 
-      {toast && (
-        <div className="fixed bottom-5 right-5 z-50 max-w-sm">
-          <div
-            className={`rounded-xl border px-4 py-3 text-xs font-semibold shadow-lg flex items-center gap-2 ${
-              toast.type === 'error'
-                ? 'border-rose-300 bg-rose-600 text-white'
-                : 'border-emerald-300 bg-emerald-600 text-white'
-            }`}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.96 }}
+            transition={{ duration: 0.22 }}
+            className="fixed bottom-5 right-5 z-50 max-w-sm"
           >
-            <span>{toast.msg}</span>
-          </div>
-        </div>
-      )}
-    </div>
+            <div
+              className={`rounded-xl border px-4 py-3 text-xs font-semibold shadow-lg flex items-center gap-2 ${
+                toast.type === 'error'
+                  ? 'border-rose-300 bg-rose-600 text-white'
+                  : 'border-emerald-300 bg-emerald-600 text-white'
+              }`}
+            >
+              <span>{toast.msg}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      </div>
+    </MotionConfig>
   );
 }

@@ -1,5 +1,7 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { statusTier } from '../../utils/formatters';
+import { DASHBOARD_EASE, MotionFillBar, staggerItemVariants } from './MotionPrimitives';
 
 interface KpiCardProps {
   title: string;
@@ -31,17 +33,24 @@ export const SparklineSvg: React.FC<{ data: number[]; color: string }> = ({ data
   const areaPts = `0,${h} ${pts.join(' ')} ${w},${h}`;
 
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-20 h-8 shrink-0 overflow-visible" aria-hidden="true">
-      <polygon points={areaPts} fill={color} fillOpacity="0.14" />
+    <motion.svg
+      viewBox={`0 0 ${w} ${h}`}
+      className="w-20 h-8 shrink-0 overflow-visible"
+      aria-hidden="true"
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: DASHBOARD_EASE, delay: 0.14 }}
+    >
+      <polygon points={areaPts} fill={color} fillOpacity="0.16" />
       <polyline
         fill="none"
         stroke={color}
-        strokeWidth="2"
+        strokeWidth="2.2"
         strokeLinecap="round"
         strokeLinejoin="round"
         points={pts.join(' ')}
       />
-    </svg>
+    </motion.svg>
   );
 };
 
@@ -60,53 +69,52 @@ export const KpiCard: React.FC<KpiCardProps> = ({
 }) => {
   const tier = pctForStatus !== undefined ? statusTier(pctForStatus) : null;
   const colorMap: Record<string, string> = {
-    blue: '#3B82F6',
+    blue: '#D4AF37',
     emerald: '#10B981',
     amber: '#F59E0B',
     rose: '#EF4444',
     neutral: '#64748B',
   };
-  const stroke = accentColor ? colorMap[accentColor] : tier?.barColor || '#3B82F6';
+  const stroke = accentColor ? colorMap[accentColor] : tier?.barColor || '#D4AF37';
   const clampedPct = Math.max(0, Math.min(100, pctForStatus ?? 0));
 
-  const Tag = onClick ? 'button' : 'div';
+  const cardClassName = `text-left w-full rounded-xl border bg-white dark:bg-[#0D1619] p-4 transition-[border-color,box-shadow,background-color] duration-200 ${
+    onClick
+      ? 'cursor-pointer hover:border-[#B88B28]/70 dark:hover:border-[#D4AF37]/60 hover:shadow-md'
+      : ''
+  } ${
+    active
+      ? 'border-[#B88B28] ring-2 ring-[#C69320]/25 dark:border-[#D4AF37] dark:ring-[#D4AF37]/25'
+      : 'border-[#E5DFD0] dark:border-[#1D2D32]'
+  }`;
 
-  return (
-    <Tag
-      type={onClick ? 'button' : undefined}
-      onClick={onClick}
-      className={`text-left w-full rounded-xl border bg-white dark:bg-slate-900 p-4 transition-all ${
-        onClick
-          ? 'cursor-pointer hover:border-blue-400 dark:hover:border-blue-500/70 hover:shadow-sm'
-          : ''
-      } ${
-        active
-          ? 'border-blue-600 ring-2 ring-blue-500/20 dark:border-blue-400'
-          : 'border-slate-200 dark:border-slate-800'
-      }`}
-    >
+  const innerContent = (
+    <>
       <div className="flex items-start justify-between gap-2">
-        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 leading-snug">{title}</span>
+        <span className="text-xs font-bold text-slate-600 dark:text-[#A9B3B5] leading-snug">{title}</span>
         {tier && (
-          <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold shrink-0 ${tier.textClass}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${tier.dotClass}`} />
-            {tier.label}
-          </span>
+          <span className={`text-[11px] font-bold shrink-0 ${tier.textClass}`}>{tier.label}</span>
         )}
       </div>
 
       <div className="mt-2 flex items-end justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-2xl sm:text-[26px] font-bold tracking-tight text-slate-900 dark:text-slate-50 tabular-nums leading-none">
+          <div className="font-display text-2xl sm:text-[26px] font-extrabold tracking-tight text-slate-950 dark:text-[#F7F3E9] tabular-nums leading-none">
             {value}
           </div>
           {subline && (
-            <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 tabular-nums truncate" title={subline}>
+            <p
+              className="mt-1.5 text-xs font-medium text-slate-600 dark:text-[#9CA8AA] tabular-nums truncate"
+              title={subline}
+            >
               {subline}
             </p>
           )}
           {subline2 && (
-            <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500 tabular-nums truncate" title={subline2}>
+            <p
+              className="mt-0.5 text-[11px] text-slate-500 dark:text-[#7E8C8F] tabular-nums truncate"
+              title={subline2}
+            >
               {subline2}
             </p>
           )}
@@ -115,25 +123,43 @@ export const KpiCard: React.FC<KpiCardProps> = ({
       </div>
 
       {showThresholdBar && pctForStatus !== undefined && (
-        <div className="mt-3 relative h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-visible">
-          <div
-            className="h-full rounded-full transition-all duration-300"
-            style={{ width: `${clampedPct}%`, backgroundColor: stroke }}
-          />
+        <div className="mt-3 relative h-2 rounded-full bg-stone-200/80 dark:bg-[#18262B] overflow-visible">
+          <MotionFillBar pct={clampedPct} color={stroke} />
           <span
             className="absolute -top-0.5 bottom-[-2px] w-px bg-slate-400/70 dark:bg-slate-500/70"
             style={{ left: '80%' }}
             title="Batas peringatan 80%"
           />
           <span
-            className="absolute -top-0.5 bottom-[-2px] w-px bg-slate-600 dark:bg-slate-300"
+            className="absolute -top-0.5 bottom-[-2px] w-px bg-slate-700 dark:bg-[#E6C45A]/80"
             style={{ left: '95%' }}
             title="Target tercapai 95%"
           />
         </div>
       )}
 
-      {footer && <div className="mt-2.5 text-xs font-medium">{footer}</div>}
-    </Tag>
+      {footer && <div className="mt-2.5 text-xs font-semibold">{footer}</div>}
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <motion.button
+        type="button"
+        onClick={onClick}
+        variants={staggerItemVariants}
+        whileHover={{ y: -2, transition: { duration: 0.16 } }}
+        whileTap={{ scale: 0.99 }}
+        className={cardClassName}
+      >
+        {innerContent}
+      </motion.button>
+    );
+  }
+
+  return (
+    <motion.div variants={staggerItemVariants} className={cardClassName}>
+      {innerContent}
+    </motion.div>
   );
 };

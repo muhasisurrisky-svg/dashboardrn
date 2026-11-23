@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { AlertCircle, ArrowRight, CheckCircle2, GitCompare } from 'lucide-react';
 import { KpiCard } from '../ui/KpiCard';
+import { MotionCard, MotionFillBar, MotionStaggerGrid } from '../ui/MotionPrimitives';
 import { DonutPanel } from '../charts/DonutPanel';
 import { SCurveChart } from '../charts/SCurveChart';
 import {
@@ -422,18 +423,19 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
   return (
     <div className="space-y-3">
       {/* YoY Toggle Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-slate-500 dark:text-slate-400">
-          Ringkasan kinerja Unit Perencanaan tahun <span className="font-semibold text-slate-700 dark:text-slate-200">{data.tahun}</span>
+      <MotionCard className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs font-medium text-slate-600 dark:text-[#9CA8AA]">
+          Ringkasan kinerja Unit Perencanaan tahun{' '}
+          <span className="font-extrabold text-slate-950 dark:text-[#F5DFA0]">{data.tahun}</span>
           {qRange ? ` · ${twLabelText(tw)}` : ''}
         </p>
         <button
           type="button"
           onClick={toggleYoy}
-          className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+          className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
             yoyOn
-              ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-700'
-              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+              ? 'border-[#C69320] bg-[#FBF5E4] text-[#855C0D] dark:bg-[#D4AF37]/15 dark:text-[#F5DFA0] dark:border-[#D4AF37]/50'
+              : 'border-[#DCD4C0] dark:border-[#23353B] bg-white dark:bg-[#0D1619] text-slate-700 dark:text-[#D5CFC2] hover:border-[#C69320]/60 dark:hover:border-[#D4AF37]/50'
           }`}
         >
           <GitCompare className="w-3.5 h-3.5" />
@@ -445,10 +447,10 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
               : `Bandingkan dengan ${prevTahunLabel}`}
           </span>
         </button>
-      </div>
+      </MotionCard>
 
       {/* 4 KPI Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+      <MotionStaggerGrid className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <KpiCard
           title="Anggaran terserap"
           value={angMetrics ? angMetrics.hero : '—'}
@@ -587,22 +589,24 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
             }
           />
         )}
-      </div>
+      </MotionStaggerGrid>
 
       {/* Middle 3-column Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+      <MotionStaggerGrid className="grid grid-cols-1 lg:grid-cols-12 gap-3">
         {/* Status unit per program */}
-        <div className="lg:col-span-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+        <MotionCard className="lg:col-span-4 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
           <div className="flex items-start justify-between gap-2 mb-2 shrink-0">
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Status unit per program</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">
+                Status unit per program
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">
                 Garis batas 80% &amp; 95%. Klik baris untuk detail.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 px-2 -mx-2 mb-1 text-[10px] font-medium text-slate-400 dark:text-slate-500 shrink-0">
+          <div className="flex items-center gap-3 px-2 -mx-2 mb-1 text-[10px] font-semibold text-slate-400 dark:text-[#7E8C8F] shrink-0">
             <div className="w-14 shrink-0" />
             <div className="flex-1 min-w-0 relative h-3.5">
               <span className="absolute left-0">0%</span>
@@ -625,34 +629,31 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
                   key={r.program}
                   type="button"
                   onClick={() => onNavigate('program', { prog: r.program })}
-                  className="w-full text-left rounded-lg px-2 py-1.5 -mx-2 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition group"
+                  className="w-full text-left rounded-lg px-2 py-1.5 -mx-2 hover:bg-stone-100/80 dark:hover:bg-[#142024] transition group cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-14 shrink-0">
-                      <div className="text-xs font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                      <div className="font-display text-xs font-extrabold text-slate-950 dark:text-[#F7F3E9] group-hover:text-[#A67C21] dark:group-hover:text-[#E6C45A]">
                         {r.program}
                       </div>
-                      <div className="text-[11px] text-slate-400 dark:text-slate-500 tabular-nums">
+                      <div className="text-[11px] font-medium text-slate-500 dark:text-[#8E9B9E] tabular-nums">
                         {fmtInt(r.total)} unit
                       </div>
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="relative h-2.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-visible">
-                        <div
-                          className="h-full rounded-full transition-all duration-300"
-                          style={{ width: `${w}%`, backgroundColor: t.barColor }}
-                        />
+                      <div className="relative h-2.5 rounded-full bg-stone-200/80 dark:bg-[#18262B] overflow-visible">
+                        <MotionFillBar pct={w} color={t.barColor} delay={0.18} />
                         <span
                           className="absolute -top-0.5 bottom-[-2px] w-px bg-slate-400/75"
                           style={{ left: '80%' }}
                         />
                         <span
-                          className="absolute -top-0.5 bottom-[-2px] w-px bg-slate-600 dark:bg-slate-300"
+                          className="absolute -top-0.5 bottom-[-2px] w-px bg-slate-700 dark:bg-[#E6C45A]/80"
                           style={{ left: '95%' }}
                         />
                       </div>
-                      <div className="mt-1 flex flex-wrap gap-x-2.5 gap-y-0.5 text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+                      <div className="mt-1 flex flex-wrap gap-x-2.5 gap-y-0.5 text-[11px] font-medium text-slate-600 dark:text-[#9CA8AA] tabular-nums">
                         <span>• Realisasi {fmtInt(r.realisasi)}</span>
                         <span>• TSGO {fmtInt(r.tsgo)}</span>
                         <span>• Belum {fmtInt(r.belumMasuk)}</span>
@@ -661,7 +662,7 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
                       </div>
                     </div>
 
-                    <div className={`w-12 text-right text-xs font-bold tabular-nums shrink-0 ${t.textClass}`}>
+                    <div className={`w-12 text-right text-xs font-extrabold tabular-nums shrink-0 ${t.textClass}`}>
                       {fmtP(r.pct)}
                     </div>
                   </div>
@@ -672,13 +673,15 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
               <p className="text-xs text-slate-400 py-6 text-center">Belum ada data program.</p>
             )}
           </div>
-        </div>
+        </MotionCard>
 
         {/* Komposisi semua program */}
-        <div className="lg:col-span-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+        <MotionCard className="lg:col-span-3 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
           <div className="mb-2 shrink-0">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Komposisi semua program</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">
+              Komposisi semua program
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">
               Distribusi status seluruh unit{qRange ? ` · TW ${tw}` : ''}
             </p>
           </div>
@@ -686,7 +689,8 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
             <div className="flex-1 flex flex-col">
               <DonutPanel
                 legendLayout="stacked-list"
-                size={168}
+                size={164}
+                dense
                 centerValue={fmtInt(progMetrics.sum.total)}
                 centerLabel="unit"
                 onSelect={() => onNavigate('program')}
@@ -731,16 +735,16 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
           ) : (
             <p className="text-xs text-slate-400 py-10 text-center my-auto">Data program tidak tersedia.</p>
           )}
-        </div>
+        </MotionCard>
 
         {/* Kurva S */}
-        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+        <MotionCard className="lg:col-span-5 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
           <div className="flex flex-wrap items-start justify-between gap-2 mb-2 shrink-0">
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+              <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">
                 Kurva S: {kurvaMode === 'unit' ? 'Program P24/P48 · MO/GO' : 'Penyerapan Anggaran'}
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">
                 {kurvaMode === 'unit' && kurvaUnit?.lastLabel && kurvaUnit.lastSelisih !== null
                   ? `${
                       qRange ? `Kumulatif Jan–${BLN_LABEL[qRange[1] - 1]} (s.d. TW ${tw}) · ` : ''
@@ -751,14 +755,14 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
               </p>
             </div>
             {kurvaRupiah && (
-              <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-0.5 text-xs">
+              <div className="inline-flex rounded-lg border border-[#DCD4C0] dark:border-[#23353B] bg-[#FAF8F2] dark:bg-[#091114] p-0.5 text-xs">
                 <button
                   type="button"
                   onClick={() => setKurvaMode('unit')}
-                  className={`px-2.5 py-1 rounded-md font-medium transition ${
+                  className={`px-2.5 py-1 rounded-md font-bold transition cursor-pointer ${
                     kurvaMode === 'unit'
-                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
-                      : 'text-slate-500 dark:text-slate-400'
+                      ? 'bg-gradient-to-r from-[#B88B28] to-[#D4AF37] text-[#070D0F] shadow-xs'
+                      : 'text-slate-600 dark:text-[#9CA8AA]'
                   }`}
                 >
                   Unit
@@ -766,10 +770,10 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setKurvaMode('rupiah')}
-                  className={`px-2.5 py-1 rounded-md font-medium transition ${
+                  className={`px-2.5 py-1 rounded-md font-bold transition cursor-pointer ${
                     kurvaMode === 'rupiah'
-                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
-                      : 'text-slate-500 dark:text-slate-400'
+                      ? 'bg-gradient-to-r from-[#B88B28] to-[#D4AF37] text-[#070D0F] shadow-xs'
+                      : 'text-slate-600 dark:text-[#9CA8AA]'
                   }`}
                 >
                   Rupiah
@@ -803,26 +807,26 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
           ) : (
             <p className="text-xs text-slate-400 py-10 text-center my-auto">Data Kurva S belum tersedia.</p>
           )}
-        </div>
-      </div>
+        </MotionCard>
+      </MotionStaggerGrid>
 
       {/* Bottom 3-column Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+      <MotionStaggerGrid className="grid grid-cols-1 lg:grid-cols-12 gap-3">
         {/* Top 6 Cost Items */}
-        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+        <MotionCard className="lg:col-span-5 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
           <div className="flex items-start justify-between gap-2 mb-2 shrink-0">
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+              <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">
                 Anggaran terbesar per cost item
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">
                 6 cost item dengan RKAP terbesar · batas target 95%
               </p>
             </div>
             <button
               type="button"
               onClick={() => onNavigate('anggaran')}
-              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1 shrink-0"
+              className="text-xs font-bold text-[#8E6510] dark:text-[#E6C45A] hover:underline inline-flex items-center gap-1 shrink-0 cursor-pointer"
             >
               Semua <ArrowRight className="w-3 h-3" />
             </button>
@@ -835,21 +839,18 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
               return (
                 <div key={`${c.fc}-${c.ci}`} className="space-y-1">
                   <div className="flex items-center justify-between gap-2 text-xs">
-                    <span className="font-medium text-slate-800 dark:text-slate-200 truncate" title={c.ci}>
+                    <span className="font-semibold text-slate-800 dark:text-[#E5DFD0] truncate" title={c.ci}>
                       {c.ci}
                     </span>
-                    <span className="shrink-0 tabular-nums text-slate-500 dark:text-slate-400">
+                    <span className="shrink-0 tabular-nums text-slate-500 dark:text-[#9CA8AA]">
                       {fmtM(c.consumed)} / {fmtM(c.rkap)}{' '}
-                      <span className={`font-bold ml-1 ${t.textClass}`}>{fmtP(c.pct)}</span>
+                      <span className={`font-extrabold ml-1 ${t.textClass}`}>{fmtP(c.pct)}</span>
                     </span>
                   </div>
-                  <div className="relative h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-visible">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{ width: `${w}%`, backgroundColor: t.barColor }}
-                    />
+                  <div className="relative h-2 rounded-full bg-stone-200/80 dark:bg-[#18262B] overflow-visible">
+                    <MotionFillBar pct={w} color={t.barColor} delay={0.22} />
                     <span
-                      className="absolute -top-0.5 bottom-[-2px] w-px bg-slate-500 dark:bg-slate-300"
+                      className="absolute -top-0.5 bottom-[-2px] w-px bg-slate-500 dark:bg-[#E6C45A]/80"
                       style={{ left: '95%' }}
                     />
                   </div>
@@ -857,13 +858,15 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
               );
             })}
           </div>
-        </div>
+        </MotionCard>
 
         {/* Nilai kontrak per tipe */}
-        <div className="lg:col-span-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
-          <div className="mb-2 shrink-0">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Nilai kontrak per tipe</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+        <MotionCard className="lg:col-span-3 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
+          <div className="mb-1.5 shrink-0">
+            <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">
+              Nilai kontrak per tipe
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">
               UMDS, SPK, dan Kontrak{qRange ? ` · ${twLabelText(tw)}` : ''}
             </p>
           </div>
@@ -871,7 +874,8 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
             <div className="flex-1 flex flex-col">
               <DonutPanel
                 legendLayout="stacked-list"
-                size={144}
+                size={156}
+                dense
                 centerValue={fmtM(nilaiPerTipe.total)}
                 centerLabel="total nilai"
                 onSelect={() => onNavigate('pengadaan')}
@@ -881,19 +885,19 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
           ) : (
             <p className="text-xs text-slate-400 py-10 text-center my-auto">Belum ada nilai kontrak.</p>
           )}
-        </div>
+        </MotionCard>
 
         {/* Perlu perhatian */}
-        <div className="lg:col-span-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+        <MotionCard className="lg:col-span-4 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
           <div className="mb-2 shrink-0">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Perlu perhatian</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">Perlu perhatian</h3>
+            <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">
               Klik item untuk membuka halaman terkait
             </p>
           </div>
 
           {perhatianItems.length === 0 ? (
-            <div className="rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/70 dark:bg-emerald-950/30 p-3 flex items-center gap-2.5 text-xs text-emerald-700 dark:text-emerald-300">
+            <div className="rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/70 dark:bg-emerald-950/30 p-3 flex items-center gap-2.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>Seluruh indikator utama berada di atas ambang batas.</span>
             </div>
@@ -909,12 +913,12 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
                     key={idx}
                     type="button"
                     onClick={() => onNavigate(item.tab, item.preset)}
-                    className={`w-full text-left rounded-lg border px-3 py-2.5 transition hover:brightness-95 dark:hover:brightness-110 flex items-start justify-between gap-2 ${badgeCls}`}
+                    className={`w-full text-left rounded-lg border px-3 py-2.5 transition hover:brightness-95 dark:hover:brightness-110 flex items-start justify-between gap-2 cursor-pointer ${badgeCls}`}
                   >
                     <div className="flex items-start gap-2 min-w-0">
                       <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                       <div className="min-w-0">
-                        <div className="text-xs font-semibold leading-snug">{item.title}</div>
+                        <div className="text-xs font-bold leading-snug">{item.title}</div>
                         <div className="text-[11px] opacity-85 mt-0.5 truncate" title={item.desc}>
                           {item.desc}
                         </div>
@@ -926,27 +930,18 @@ export const RingkasanView: React.FC<RingkasanViewProps> = ({
               })}
             </div>
           )}
-        </div>
-      </div>
+        </MotionCard>
+      </MotionStaggerGrid>
 
       {/* Status Color Legend Strip */}
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
-        <span className="font-medium text-slate-600 dark:text-slate-300">Panduan warna &amp; batas status:</span>
-        <div className="flex flex-wrap items-center gap-4">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>≥ 95% Tercapai</span>
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-amber-500" />
-            <span>80% – 94,9% Peringatan</span>
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-rose-500" />
-            <span>&lt; 80% Perlu Perhatian</span>
-          </span>
+      <MotionCard className="rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 dark:text-[#9CA8AA]">
+        <span className="font-bold text-slate-800 dark:text-[#E5DFD0]">Panduan warna &amp; batas status:</span>
+        <div className="flex flex-wrap items-center gap-4 font-semibold">
+          <span className="text-emerald-600 dark:text-emerald-400">≥ 95% Tercapai</span>
+          <span className="text-amber-600 dark:text-amber-400">80% – 94,9% Peringatan</span>
+          <span className="text-rose-600 dark:text-rose-400">&lt; 80% Perlu Perhatian</span>
         </div>
-      </div>
+      </MotionCard>
 
       {/* Quick sanity hidden usage check */}
       <span className="sr-only">{fmtRp(data.anggaran?.total.rkap)}</span>

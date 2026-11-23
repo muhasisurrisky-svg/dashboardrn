@@ -64,42 +64,37 @@ export const SCurveChart: React.FC<SCurveChartProps> = ({
     <div className="flex-1 flex flex-col min-h-0 gap-2.5">
       {showSummaryStrip && summary && tier && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 shrink-0">
-          <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 px-3 py-2">
-            <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+          <div className="rounded-lg border border-[#E5DFD0] dark:border-[#1D2D32] bg-[#FAF8F3] dark:bg-[#101B1F] px-3 py-2">
+            <div className="text-[11px] font-semibold text-slate-500 dark:text-[#9CA8AA]">
               Rencana per {summary.label}
             </div>
-            <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 tabular-nums mt-0.5">
+            <div className="font-display text-sm sm:text-base font-extrabold text-slate-950 dark:text-white tabular-nums mt-0.5">
               {formatValue(summary.rencana)}
             </div>
           </div>
-          <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 px-3 py-2">
-            <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Realisasi</div>
-            <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 tabular-nums mt-0.5">
+          <div className="rounded-lg border border-[#E5DFD0] dark:border-[#1D2D32] bg-[#FAF8F3] dark:bg-[#101B1F] px-3 py-2">
+            <div className="text-[11px] font-semibold text-slate-500 dark:text-[#9CA8AA]">Realisasi</div>
+            <div className="font-display text-sm sm:text-base font-extrabold text-slate-950 dark:text-white tabular-nums mt-0.5">
               {formatValue(summary.realisasi)}
             </div>
           </div>
-          <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 px-3 py-2">
-            <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Selisih</div>
+          <div className="rounded-lg border border-[#E5DFD0] dark:border-[#1D2D32] bg-[#FAF8F3] dark:bg-[#101B1F] px-3 py-2">
+            <div className="text-[11px] font-semibold text-slate-500 dark:text-[#9CA8AA]">Selisih</div>
             <div
-              className={`text-sm sm:text-base font-bold tabular-nums mt-0.5 ${
+              className={`font-display text-sm sm:text-base font-extrabold tabular-nums mt-0.5 ${
                 summary.selisih >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
               }`}
             >
               {formatSelisih(summary.selisih)}
             </div>
           </div>
-          <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 px-3 py-2">
-            <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Pencapaian</div>
+          <div className="rounded-lg border border-[#E5DFD0] dark:border-[#1D2D32] bg-[#FAF8F3] dark:bg-[#101B1F] px-3 py-2">
+            <div className="text-[11px] font-semibold text-slate-500 dark:text-[#9CA8AA]">Pencapaian</div>
             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-              <span className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+              <span className="font-display text-sm sm:text-base font-extrabold text-slate-950 dark:text-white tabular-nums">
                 {fmtP(summary.pct)}
               </span>
-              <span
-                className={`inline-flex items-center gap-1.5 text-[11px] font-semibold ${tier.textClass}`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${tier.dotClass}`} />
-                {tier.label}
-              </span>
+              <span className={`text-[11px] font-bold ${tier.textClass}`}>{tier.label}</span>
             </div>
           </div>
         </div>
@@ -110,9 +105,9 @@ export const SCurveChart: React.FC<SCurveChartProps> = ({
         heightClass={heightClass}
         deps={[labels, rencana, realisasi, unitLabel, isPercentScale]}
         buildConfig={(ctx, dark) => {
-          const textMuted = dark ? '#94A3B8' : '#64748B';
-          const gridColor = dark ? 'rgba(148, 163, 184, 0.12)' : 'rgba(15, 23, 42, 0.06)';
-          const renColor = dark ? '#818CF8' : '#3B82F6';
+          const textMuted = dark ? '#9CA8AA' : '#5E656B';
+          const gridColor = dark ? 'rgba(212, 175, 55, 0.09)' : 'rgba(15, 23, 42, 0.06)';
+          const renColor = dark ? '#D4AF37' : '#A67C21';
           const realColor = '#10B981';
 
           const grad = ctx.createLinearGradient(0, 0, 0, 260);

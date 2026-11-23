@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { AlertCircle, ArrowRight, ExternalLink, RotateCcw, X } from 'lucide-react';
 import { KpiCard } from '../ui/KpiCard';
+import { MotionCard, MotionStaggerGrid } from '../ui/MotionPrimitives';
 import { DonutPanel } from '../charts/DonutPanel';
 import { ChartCanvas } from '../charts/ChartCanvas';
 import { DataTable, type DataTableColumn } from '../ui/DataTable';
@@ -146,12 +147,14 @@ export const FasilitasRingkasanView: React.FC<FasilitasRingkasanProps> = ({
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-500 dark:text-slate-400">
-        Ringkasan kinerja Unit Fasilitas (PROLIS, Kelayakan Kelas A, dan APAR){qRange ? ` · ${twLabelText(tw)}` : ''}
-      </p>
+      <MotionCard>
+        <p className="text-xs font-medium text-slate-600 dark:text-[#9CA8AA]">
+          Ringkasan kinerja Unit Fasilitas (PROLIS, Kelayakan Kelas A, dan APAR){qRange ? ` · ${twLabelText(tw)}` : ''}
+        </p>
+      </MotionCard>
 
       {/* 4 KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+      <MotionStaggerGrid className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <KpiCard
           title="Realisasi PROLIS"
           value={prolis ? fmtP(prolisSummary.pctReal) : '—'}
@@ -235,14 +238,14 @@ export const FasilitasRingkasanView: React.FC<FasilitasRingkasanProps> = ({
             )
           }
         />
-      </div>
+      </MotionStaggerGrid>
 
       {/* Middle Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        <div className="lg:col-span-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+      <MotionStaggerGrid className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <MotionCard className="lg:col-span-4 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
           <div className="mb-2 shrink-0">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Kondisi mesin PROLIS</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Status pengecekan terakhir</p>
+            <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">Kondisi mesin PROLIS</h3>
+            <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">Status pengecekan terakhir</p>
           </div>
           <div className="flex-1 flex flex-col">
             <DonutPanel
@@ -258,12 +261,12 @@ export const FasilitasRingkasanView: React.FC<FasilitasRingkasanProps> = ({
               ]}
             />
           </div>
-        </div>
+        </MotionCard>
 
-        <div className="lg:col-span-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+        <MotionCard className="lg:col-span-4 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
           <div className="mb-2 shrink-0">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Status APAR</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Kepatuhan masa berlaku APAR</p>
+            <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">Status APAR</h3>
+            <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">Kepatuhan masa berlaku APAR</p>
           </div>
           {apar ? (
             <div className="flex-1 flex flex-col">
@@ -283,12 +286,12 @@ export const FasilitasRingkasanView: React.FC<FasilitasRingkasanProps> = ({
           ) : (
             <p className="text-xs text-slate-400 py-10 text-center my-auto">Data APAR tidak tersedia.</p>
           )}
-        </div>
+        </MotionCard>
 
-        <div className="lg:col-span-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+        <MotionCard className="lg:col-span-4 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
           <div className="mb-2">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Perlu perhatian</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Tindak lanjut cepat Unit Fasilitas</p>
+            <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">Perlu perhatian</h3>
+            <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">Tindak lanjut cepat Unit Fasilitas</p>
           </div>
           <div className="space-y-2">
             {prolisSummary.rusak > 0 && (
@@ -338,17 +341,17 @@ export const FasilitasRingkasanView: React.FC<FasilitasRingkasanProps> = ({
               </button>
             )}
           </div>
-        </div>
-      </div>
+        </MotionCard>
+      </MotionStaggerGrid>
 
       {/* Bottom Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        <div className="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+      <MotionStaggerGrid className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <MotionCard className="lg:col-span-7 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
           <div className="mb-2 shrink-0">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">
               Program vs realisasi PROLIS per bulan
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">
               Jumlah jadwal pemeliharaan dan realisasinya sepanjang tahun
             </p>
           </div>
@@ -406,14 +409,14 @@ export const FasilitasRingkasanView: React.FC<FasilitasRingkasanProps> = ({
               },
             })}
           />
-        </div>
+        </MotionCard>
 
-        <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
+        <MotionCard className="lg:col-span-5 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
           <div className="mb-2 shrink-0">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white">
               Kelayakan Kelas A per jenis fasilitas
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-[#9CA8AA] mt-0.5">
               Perbandingan item memenuhi vs belum tersedia
             </p>
           </div>
@@ -465,8 +468,8 @@ export const FasilitasRingkasanView: React.FC<FasilitasRingkasanProps> = ({
               },
             })}
           />
-        </div>
-      </div>
+        </MotionCard>
+      </MotionStaggerGrid>
     </div>
   );
 };
@@ -550,7 +553,7 @@ export const FasilitasProlisView: React.FC<FasilitasProlisProps> = ({ fasilitas,
 
   if (!prolis) {
     return (
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center text-sm text-slate-500">
+      <div className="rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-8 text-center text-sm text-slate-500 dark:text-[#9CA8AA]">
         Data PROLIS tidak tersedia atau gagal dibuka.
       </div>
     );
@@ -636,7 +639,7 @@ export const FasilitasProlisView: React.FC<FasilitasProlisProps> = ({ fasilitas,
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <MotionStaggerGrid className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <KpiCard title="Jumlah mesin" value={fmtInt(filtered.length)} subline={`Tahun ${fTahun === '__ALL__' ? 'Semua' : fTahun}`} accentColor="blue" />
         <KpiCard
           title="Realisasi pemeliharaan"
@@ -650,11 +653,11 @@ export const FasilitasProlisView: React.FC<FasilitasProlisProps> = ({ fasilitas,
           subline={`${fmtInt(stats.rusak)} rusak · ${fmtInt(stats.afkir)} usulan afkir`}
           accentColor={stats.rusak > 0 ? 'amber' : 'emerald'}
         />
-      </div>
+      </MotionStaggerGrid>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        <div className="lg:col-span-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2 shrink-0">
+      <MotionStaggerGrid className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <MotionCard className="lg:col-span-6 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
+          <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white mb-2 shrink-0">
             Program vs realisasi per bulan
           </h3>
           <ChartCanvas
@@ -693,10 +696,10 @@ export const FasilitasProlisView: React.FC<FasilitasProlisProps> = ({ fasilitas,
               },
             })}
           />
-        </div>
+        </MotionCard>
 
-        <div className="lg:col-span-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2 shrink-0">
+        <MotionCard className="lg:col-span-6 rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
+          <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white mb-2 shrink-0">
             Kondisi per jenis mesin (Top 12)
           </h3>
           <ChartCanvas
@@ -738,8 +741,8 @@ export const FasilitasProlisView: React.FC<FasilitasProlisProps> = ({ fasilitas,
               },
             })}
           />
-        </div>
-      </div>
+        </MotionCard>
+      </MotionStaggerGrid>
 
       <DataTable
         title="Daftar mesin & peralatan (PROLIS)"
@@ -836,7 +839,7 @@ export const FasilitasKelayakanView: React.FC<FasilitasKelayakanProps> = ({ fasi
 
   if (!bysgu) {
     return (
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center text-sm text-slate-500">
+      <div className="rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-8 text-center text-sm text-slate-500 dark:text-[#9CA8AA]">
         Data Kelayakan Kelas A (BY SGU) tidak tersedia atau gagal dibuka.
       </div>
     );
@@ -916,21 +919,21 @@ export const FasilitasKelayakanView: React.FC<FasilitasKelayakanProps> = ({ fasi
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+      <MotionStaggerGrid className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <KpiCard title="Persentase kelayakan" value={fmtP(stats.pct)} subline={`${fmtInt(stats.ada)} dari ${fmtInt(stats.wajibCount)} item wajib`} pctForStatus={stats.pct} showThresholdBar />
         <KpiCard title="Memenuhi syarat" value={fmtInt(stats.ada)} subline="Item wajib berstatus Ada" accentColor="emerald" />
         <KpiCard title="Belum tersedia" value={fmtInt(stats.belum)} subline="Wajib Kelas A perlu pemenuhan" accentColor="rose" />
         <KpiCard title="Tidak wajib" value={fmtInt(stats.tidakWajib)} subline={`Dari ${fmtInt(stats.total)} item tercatat`} accentColor="neutral" />
-      </div>
+      </MotionStaggerGrid>
 
       {hasFilter && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-blue-200 dark:border-blue-800/60 bg-blue-50/70 dark:bg-blue-950/30 px-3.5 py-2 text-xs">
-          <span className="font-semibold text-blue-700 dark:text-blue-300">Filter aktif</span>
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[#C69320]/40 dark:border-[#D4AF37]/40 bg-[#FBF5E4]/85 dark:bg-[#142226] px-3.5 py-2 text-xs">
+          <span className="font-bold text-[#855C0D] dark:text-[#F5DFA0]">Filter aktif</span>
           {fJenis !== '__ALL__' && (
             <button
               type="button"
               onClick={() => setFJenis('__ALL__')}
-              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-slate-800 border border-blue-200 px-2 py-0.5"
+              className="inline-flex items-center gap-1 rounded-md bg-white dark:bg-[#0D1619] border border-[#DCD4C0] dark:border-[#23353B] px-2 py-0.5 font-semibold cursor-pointer"
             >
               Jenis: {fJenis} <X className="w-3 h-3" />
             </button>
@@ -943,15 +946,15 @@ export const FasilitasKelayakanView: React.FC<FasilitasKelayakanProps> = ({ fasi
               setFTw('__ALL__');
               setFStatus('__ALL__');
             }}
-            className="ml-auto inline-flex items-center gap-1 font-semibold text-blue-700 dark:text-blue-300 hover:underline"
+            className="ml-auto inline-flex items-center gap-1 font-bold text-[#8E6510] dark:text-[#E6C45A] hover:underline cursor-pointer"
           >
             <RotateCcw className="w-3 h-3" /> Reset filter
           </button>
         </div>
       )}
 
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 flex flex-col">
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2 shrink-0">
+      <MotionCard className="rounded-xl border border-[#E5DFD0] dark:border-[#1D2D32] bg-white dark:bg-[#0D1619] p-3.5 flex flex-col">
+        <h3 className="font-display text-sm font-bold text-slate-950 dark:text-white mb-2 shrink-0">
           Kelayakan per jenis fasilitas
         </h3>
         <ChartCanvas
@@ -991,7 +994,7 @@ export const FasilitasKelayakanView: React.FC<FasilitasKelayakanProps> = ({ fasi
             },
           })}
         />
-      </div>
+      </MotionCard>
 
       <DataTable
         title="Daftar persyaratan & kondisi eksisting (BY SGU)"
